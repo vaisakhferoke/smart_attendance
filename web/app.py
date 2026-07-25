@@ -8,19 +8,10 @@ from werkzeug.utils import secure_filename
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(PROJECT_ROOT)
 from db_config import get_db_connection
+import face_utils
 
-def get_cascade_path():
-    default_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml' if hasattr(cv2, 'data') else 'haarcascade_frontalface_default.xml'
-    if os.path.exists(default_path):
-        return default_path
-    local_path = os.path.join(PROJECT_ROOT, 'haarcascade_frontalface_default.xml')
-    if not os.path.exists(local_path):
-        url = 'https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/haarcascade_frontalface_default.xml'
-        urllib.request.urlretrieve(url, local_path)
-    return local_path
-
-cascade_path = get_cascade_path()
-face_cascade = cv2.CascadeClassifier(cascade_path)
+# Run database encoding auto-migration
+face_utils.auto_migrate_legacy_encodings()
 
 app = Flask(__name__)
 app.secret_key = 'smart_attendance_super_secret_key_2026'
@@ -650,19 +641,11 @@ def register():
             cv2.imwrite(abs_photo_path, img)
             photo_path = rel_photo_path
 
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(30, 30))
-
-            if len(faces) > 0:
-                (x, y, w, h) = faces[0]
-                face_roi = gray[y:y+h, x:x+w]
-                resized_face = cv2.resize(face_roi, (64, 64))
-                face_features = (resized_face.flatten() / 255.0).tolist()
-                face_encoding_str = json.dumps(face_features)
+            encoding = face_utils.extract_face_encoding(img)
+            if encoding is not None:
+                face_encoding_str = json.dumps(encoding.tolist())
             else:
-                resized_img = cv2.resize(gray, (64, 64))
-                face_features = (resized_img.flatten() / 255.0).tolist()
-                face_encoding_str = json.dumps(face_features)
+                face_encoding_str = "[]"
 
         except Exception as img_err:
             print(f"Image error: {img_err}")
@@ -714,19 +697,19 @@ def scan_attendance():
         nparr = np.frombuffer(img_bytes, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(30, 30))
+        boxes, yunet_faces = face_utils.detect_faces(img)
 
-        if len(faces) == 0:
+        if len(boxes) == 0:
             return jsonify({'status': 'success', 'recognized': False, 'msg': 'Scanning... Position face clearly in camera.'})
 
-        (x, y, w, h) = faces[0]
-        face_roi = gray[y:y+h, x:x+w]
-        resized_face = cv2.resize(face_roi, (64, 64))
-        current_encoding = (resized_face.flatten() / 255.0).astype(np.float32)
+        yunet_face = yunet_faces[0] if yunet_faces is not None and len(yunet_faces) > 0 else None
+        current_encoding = face_utils.extract_face_encoding(img, bbox=boxes[0], yunet_face=yunet_face)
 
     except Exception as err:
         return jsonify({'status': 'error', 'msg': f"Image decoding error: {err}"}), 400
+
+    if current_encoding is None:
+        return jsonify({'status': 'success', 'recognized': False, 'msg': 'Scanning... Position face clearly.'})
 
     conn = get_db_connection()
     if conn is None:
@@ -746,18 +729,17 @@ def scan_attendance():
         rows = cursor.fetchall()
 
         matched_emp = None
-        best_similarity = 0.0
+        best_similarity = -1.0
 
         for r in rows:
             if r['face_encoding']:
                 try:
                     vec = np.array(json.loads(r['face_encoding']), dtype=np.float32)
-                    if len(vec) == 4096:
-                        sim = compute_similarity(vec, current_encoding)
-                        dist = float(np.linalg.norm(vec - current_encoding))
+                    if len(vec) == 128:
+                        sim = face_utils.compute_similarity(vec, current_encoding)
                         if sim > best_similarity:
                             best_similarity = sim
-                            if sim >= 0.55 or dist <= 20.0:
+                            if sim >= face_utils.MATCH_THRESHOLD:
                                 matched_emp = r
                 except Exception:
                     pass

@@ -329,6 +329,7 @@ body {
 }
 
 .input-wrapper {
+    padding-top: 3mm;
     position: relative;
     display: flex;
     align-items: center;
@@ -1454,8 +1455,15 @@ video {
 }
 
 @keyframes modalPop {
-    0% { transform: scale(0.92); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+    0% {
+        transform: scale(0.92);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 .modal-header {
