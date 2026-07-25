@@ -4,6 +4,7 @@ import os, sys, cv2, numpy as np, json, base64, urllib.request, time
 from datetime import datetime
 from functools import wraps
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(PROJECT_ROOT)
@@ -12,6 +13,29 @@ import face_utils
 
 # Run database encoding auto-migration
 face_utils.auto_migrate_legacy_encodings()
+
+def auto_migrate_employee_credentials():
+    conn = get_db_connection()
+    if conn is None:
+        return
+    try:
+        cursor = conn.cursor()
+        try:
+            cursor.execute("ALTER TABLE employees ADD COLUMN username VARCHAR(100) NULL AFTER emp_code")
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            cursor.execute("ALTER TABLE employees ADD COLUMN password VARCHAR(255) NULL AFTER username")
+            conn.commit()
+        except Exception:
+            pass
+    except Exception as err:
+        print(f"Employee credentials migration notice: {err}")
+    finally:
+        conn.close()
+
+auto_migrate_employee_credentials()
 
 app = Flask(__name__)
 app.secret_key = 'smart_attendance_super_secret_key_2026'
@@ -183,7 +207,7 @@ def employees_page():
         try:
             cursor = conn.cursor(dictionary=True)
             query = """
-                SELECT e.id, e.emp_code, e.full_name, e.email, e.phone, e.address, e.photo_path,
+                SELECT e.id, e.emp_code, e.username, e.password, e.full_name, e.email, e.phone, e.address, e.photo_path,
                        e.status, e.branch_id, e.department_id, e.designation_id, e.created_at,
                        d.department_name, dg.designation_name,
                        b.branch_name, b.branch_code
@@ -209,6 +233,8 @@ def employees_page():
 @login_required
 def edit_employee(emp_id):
     full_name = request.form.get('full_name', '').strip()
+    username = request.form.get('username', '').strip()
+    raw_password = request.form.get('password', '').strip()
     email = request.form.get('email', '').strip()
     phone = request.form.get('phone', '').strip()
     address = request.form.get('address', '').strip()
@@ -250,6 +276,10 @@ def edit_employee(emp_id):
             except Exception as e:
                 print(f"Base64 image decode error: {e}")
 
+        password_hash = generate_password_hash(raw_password) if raw_password else None
+        username_val = username if username else None
+        face_encoding_str = None
+
         if img_to_process is not None and img_to_process.size > 0:
             photos_dir = os.path.join(PROJECT_ROOT, 'captured_photos')
             os.makedirs(photos_dir, exist_ok=True)
@@ -260,36 +290,68 @@ def edit_employee(emp_id):
             encoding = face_utils.extract_face_encoding(img_to_process)
             face_encoding_str = json.dumps(encoding.tolist()) if encoding is not None else None
 
-            if face_encoding_str:
+        if password_hash:
+            if new_photo_rel_path and face_encoding_str:
                 cursor.execute("""
                     UPDATE employees 
-                    SET full_name=%s, email=%s, phone=%s, address=%s, branch_id=%s, department_id=%s, designation_id=%s, photo_path=%s, face_encoding=%s
+                    SET full_name=%s, username=%s, password=%s, email=%s, phone=%s, address=%s, branch_id=%s, department_id=%s, designation_id=%s, photo_path=%s, face_encoding=%s
                     WHERE id=%s
-                """, (full_name, email, phone, address, 
+                """, (full_name, username_val, password_hash, email, phone, address, 
                       int(branch_id) if branch_id else None, 
                       int(dept_id) if dept_id else None, 
                       int(desig_id) if desig_id else None, 
                       new_photo_rel_path, face_encoding_str, emp_id))
-            else:
+            elif new_photo_rel_path:
                 cursor.execute("""
                     UPDATE employees 
-                    SET full_name=%s, email=%s, phone=%s, address=%s, branch_id=%s, department_id=%s, designation_id=%s, photo_path=%s
+                    SET full_name=%s, username=%s, password=%s, email=%s, phone=%s, address=%s, branch_id=%s, department_id=%s, designation_id=%s, photo_path=%s
                     WHERE id=%s
-                """, (full_name, email, phone, address, 
+                """, (full_name, username_val, password_hash, email, phone, address, 
                       int(branch_id) if branch_id else None, 
                       int(dept_id) if dept_id else None, 
                       int(desig_id) if desig_id else None, 
                       new_photo_rel_path, emp_id))
+            else:
+                cursor.execute("""
+                    UPDATE employees 
+                    SET full_name=%s, username=%s, password=%s, email=%s, phone=%s, address=%s, branch_id=%s, department_id=%s, designation_id=%s
+                    WHERE id=%s
+                """, (full_name, username_val, password_hash, email, phone, address, 
+                      int(branch_id) if branch_id else None, 
+                      int(dept_id) if dept_id else None, 
+                      int(desig_id) if desig_id else None, 
+                      emp_id))
         else:
-            cursor.execute("""
-                UPDATE employees 
-                SET full_name=%s, email=%s, phone=%s, address=%s, branch_id=%s, department_id=%s, designation_id=%s
-                WHERE id=%s
-            """, (full_name, email, phone, address, 
-                  int(branch_id) if branch_id else None, 
-                  int(dept_id) if dept_id else None, 
-                  int(desig_id) if desig_id else None, 
-                  emp_id))
+            if new_photo_rel_path and face_encoding_str:
+                cursor.execute("""
+                    UPDATE employees 
+                    SET full_name=%s, username=%s, email=%s, phone=%s, address=%s, branch_id=%s, department_id=%s, designation_id=%s, photo_path=%s, face_encoding=%s
+                    WHERE id=%s
+                """, (full_name, username_val, email, phone, address, 
+                      int(branch_id) if branch_id else None, 
+                      int(dept_id) if dept_id else None, 
+                      int(desig_id) if desig_id else None, 
+                      new_photo_rel_path, face_encoding_str, emp_id))
+            elif new_photo_rel_path:
+                cursor.execute("""
+                    UPDATE employees 
+                    SET full_name=%s, username=%s, email=%s, phone=%s, address=%s, branch_id=%s, department_id=%s, designation_id=%s, photo_path=%s
+                    WHERE id=%s
+                """, (full_name, username_val, email, phone, address, 
+                      int(branch_id) if branch_id else None, 
+                      int(dept_id) if dept_id else None, 
+                      int(desig_id) if desig_id else None, 
+                      new_photo_rel_path, emp_id))
+            else:
+                cursor.execute("""
+                    UPDATE employees 
+                    SET full_name=%s, username=%s, email=%s, phone=%s, address=%s, branch_id=%s, department_id=%s, designation_id=%s
+                    WHERE id=%s
+                """, (full_name, username_val, email, phone, address, 
+                      int(branch_id) if branch_id else None, 
+                      int(dept_id) if dept_id else None, 
+                      int(desig_id) if desig_id else None, 
+                      emp_id))
 
         conn.commit()
         return jsonify({'status': 'success', 'msg': f"Employee {full_name} ({emp_code}) updated successfully!"})
@@ -714,6 +776,8 @@ def register():
     data = request.form
     emp_code = data.get('emp_code', '').strip()
     full_name = data.get('full_name', '').strip()
+    username = data.get('username', '').strip()
+    raw_password = data.get('password', '').strip()
     img_data = data.get('photo')
     
     if not emp_code or not full_name:
@@ -728,6 +792,7 @@ def register():
 
     photo_path = None
     face_encoding_str = "[]"
+    password_hash = generate_password_hash(raw_password) if raw_password else None
 
     if img_data:
         try:
@@ -760,11 +825,13 @@ def register():
         cursor = conn.cursor()
         query = """
             INSERT INTO employees 
-            (emp_code, full_name, email, phone, address, branch_id, department_id, designation_id, face_encoding, photo_path)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            (emp_code, username, password, full_name, email, phone, address, branch_id, department_id, designation_id, face_encoding, photo_path)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         values = (
             emp_code,
+            username if username else None,
+            password_hash,
             full_name,
             data.get('email', '').strip(),
             data.get('phone', '').strip(),

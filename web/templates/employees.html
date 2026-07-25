@@ -25,6 +25,8 @@
                 <tr>
                     <th>Employee Name</th>
                     <th>Emp Code</th>
+                    <th>Username</th>
+                    <th>Password Status</th>
                     <th>Contact Info</th>
                     <th>Branch</th>
                     <th>Department</th>
@@ -53,6 +55,18 @@
                         </div>
                     </td>
                     <td><code>{{ emp.emp_code }}</code></td>
+                    <td><code>{{ emp.username or 'N/A' }}</code></td>
+                    <td>
+                        {% if emp.password %}
+                        <span class="badge-count" style="color: var(--accent-emerald); background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.25);">
+                            <i class="fa-solid fa-lock"></i> Encrypted
+                        </span>
+                        {% else %}
+                        <span class="text-dim" style="font-size: 0.8rem;">
+                            <i class="fa-solid fa-lock-open"></i> Not Set
+                        </span>
+                        {% endif %}
+                    </td>
                     <td>
                         <div class="contact-info">
                             <span><i class="fa-solid fa-envelope"></i> {{ emp.email or 'N/A' }}</span>
@@ -74,6 +88,7 @@
                     <td>
                         <button type="button" class="btn-action btn-edit" data-id="{{ emp.id }}"
                             data-code="{{ emp.emp_code }}" data-name="{{ emp.full_name }}"
+                            data-username="{{ emp.username or '' }}"
                             data-email="{{ emp.email or '' }}" data-phone="{{ emp.phone or '' }}"
                             data-address="{{ emp.address or '' }}" data-branch="{{ emp.branch_id or '' }}"
                             data-dept="{{ emp.department_id or '' }}" data-desig="{{ emp.designation_id or '' }}"
@@ -89,17 +104,16 @@
                             onclick="deleteEmployee('{{ emp.id }}', '{{ emp.full_name }}')">
                             <i class="fa-solid fa-trash-can"></i> Delete
                         </button>
-    </div>
-    </td>
-    </tr>
-    {% endfor %}
-    {% else %}
-    <tr>
-        <td colspan="9" class="empty-table">
-            <i class="fa-solid fa-users-slash"></i> No registered employees found.
-        </td>
-    </tr>
-    {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="11" class="empty-table">
+                        <i class="fa-solid fa-users-slash"></i> No registered employees found.
+                    </td>
+                </tr>
+                {% endif %}
     </tbody>
     </table>
 </div>
@@ -166,6 +180,30 @@
                     <div class="input-wrapper">
                         <i class="fa-solid fa-location-dot input-icon"></i>
                         <input type="text" id="edit_address" name="address" placeholder="Street, City, State, ZIP Code" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Credentials Section -->
+            <div class="form-section">
+                <span class="section-title"><i class="fa-solid fa-key"></i> Account Credentials (Encrypted)</span>
+                <div class="input-grid">
+                    <!-- Username -->
+                    <div class="input-group">
+                        <label for="edit_username">Account Username</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-user-gear input-icon"></i>
+                            <input type="text" id="edit_username" name="username" placeholder="e.g. john_doe" />
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="input-group">
+                        <label for="edit_password">Password (Stored Encrypted)</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-lock input-icon"></i>
+                            <input type="password" id="edit_password" name="password" placeholder="Leave blank to keep current" />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -301,6 +339,7 @@
         const id = btn.getAttribute('data-id');
         const code = btn.getAttribute('data-code');
         const fullName = btn.getAttribute('data-name');
+        const username = btn.getAttribute('data-username');
         const email = btn.getAttribute('data-email');
         const phone = btn.getAttribute('data-phone');
         const address = btn.getAttribute('data-address');
@@ -313,6 +352,8 @@
         document.getElementById('modalEmpCode').innerText = code;
         document.getElementById('edit_code_display').value = code || '';
         document.getElementById('edit_full_name').value = fullName || '';
+        document.getElementById('edit_username').value = username || '';
+        document.getElementById('edit_password').value = '';
         document.getElementById('edit_email').value = email || '';
         document.getElementById('edit_phone').value = phone || '';
         document.getElementById('edit_address').value = address || '';
