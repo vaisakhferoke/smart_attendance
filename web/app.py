@@ -1,5 +1,5 @@
 # pyrefly: ignore [missing-import]
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_from_directory
 import os, sys, cv2, numpy as np, json, base64, urllib.request, time
 from datetime import datetime
 from functools import wraps
@@ -20,6 +20,11 @@ app.secret_key = 'smart_attendance_super_secret_key_2026'
 UPLOAD_FOLDER = os.path.join(PROJECT_ROOT, 'web', 'static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+@app.route('/captured_photos/<path:filename>')
+def serve_captured_photo(filename):
+    photos_dir = os.path.join(PROJECT_ROOT, 'captured_photos')
+    return send_from_directory(photos_dir, filename)
 
 def login_required(f):
     @wraps(f)
@@ -178,8 +183,9 @@ def employees_page():
         try:
             cursor = conn.cursor(dictionary=True)
             query = """
-                SELECT e.id, e.emp_code, e.full_name, e.email, e.phone, e.photo_path,
-                       e.status, e.created_at, d.department_name, dg.designation_name,
+                SELECT e.id, e.emp_code, e.full_name, e.email, e.phone, e.address, e.photo_path,
+                       e.status, e.branch_id, e.department_id, e.designation_id, e.created_at,
+                       d.department_name, dg.designation_name,
                        b.branch_name, b.branch_code
                 FROM employees e
                 LEFT JOIN departments d ON e.department_id = d.id
@@ -195,7 +201,103 @@ def employees_page():
             print(f"Fetch employees error: {err}")
         finally:
             conn.close()
-    return render_template('employees.html', employees=employees)
+
+    departments, designations, branches = fetch_metadata()
+    return render_template('employees.html', employees=employees, departments=departments, designations=designations, branches=branches)
+
+@app.route('/employees/edit/<int:emp_id>', methods=['POST'])
+@login_required
+def edit_employee(emp_id):
+    full_name = request.form.get('full_name', '').strip()
+    email = request.form.get('email', '').strip()
+    phone = request.form.get('phone', '').strip()
+    address = request.form.get('address', '').strip()
+    branch_id = request.form.get('branch_id')
+    dept_id = request.form.get('department_id') or request.form.get('dept_id')
+    desig_id = request.form.get('designation_id') or request.form.get('desig_id')
+
+    if not full_name:
+        return jsonify({'status': 'error', 'msg': 'Full Name is required.'}), 400
+
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({'status': 'error', 'msg': 'DB connection failed'}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, emp_code, photo_path FROM employees WHERE id = %s", (emp_id,))
+        emp = cursor.fetchone()
+        if not emp:
+            return jsonify({'status': 'error', 'msg': 'Employee not found'}), 404
+
+        emp_code = emp['emp_code']
+        photo_file = request.files.get('photo_file')
+        photo_base64 = request.form.get('photo_base64')
+
+        img_to_process = None
+        new_photo_rel_path = None
+
+        if photo_file and photo_file.filename:
+            file_bytes = photo_file.read()
+            nparr = np.frombuffer(file_bytes, np.uint8)
+            img_to_process = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        elif photo_base64 and len(photo_base64) > 30:
+            try:
+                header, encoded = photo_base64.split(',', 1) if ',' in photo_base64 else ('', photo_base64)
+                img_bytes = base64.b64decode(encoded)
+                nparr = np.frombuffer(img_bytes, np.uint8)
+                img_to_process = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            except Exception as e:
+                print(f"Base64 image decode error: {e}")
+
+        if img_to_process is not None and img_to_process.size > 0:
+            photos_dir = os.path.join(PROJECT_ROOT, 'captured_photos')
+            os.makedirs(photos_dir, exist_ok=True)
+            new_photo_rel_path = os.path.join('captured_photos', f"{emp_code}.jpg")
+            abs_photo_path = os.path.join(PROJECT_ROOT, new_photo_rel_path)
+            cv2.imwrite(abs_photo_path, img_to_process)
+
+            encoding = face_utils.extract_face_encoding(img_to_process)
+            face_encoding_str = json.dumps(encoding.tolist()) if encoding is not None else None
+
+            if face_encoding_str:
+                cursor.execute("""
+                    UPDATE employees 
+                    SET full_name=%s, email=%s, phone=%s, address=%s, branch_id=%s, department_id=%s, designation_id=%s, photo_path=%s, face_encoding=%s
+                    WHERE id=%s
+                """, (full_name, email, phone, address, 
+                      int(branch_id) if branch_id else None, 
+                      int(dept_id) if dept_id else None, 
+                      int(desig_id) if desig_id else None, 
+                      new_photo_rel_path, face_encoding_str, emp_id))
+            else:
+                cursor.execute("""
+                    UPDATE employees 
+                    SET full_name=%s, email=%s, phone=%s, address=%s, branch_id=%s, department_id=%s, designation_id=%s, photo_path=%s
+                    WHERE id=%s
+                """, (full_name, email, phone, address, 
+                      int(branch_id) if branch_id else None, 
+                      int(dept_id) if dept_id else None, 
+                      int(desig_id) if desig_id else None, 
+                      new_photo_rel_path, emp_id))
+        else:
+            cursor.execute("""
+                UPDATE employees 
+                SET full_name=%s, email=%s, phone=%s, address=%s, branch_id=%s, department_id=%s, designation_id=%s
+                WHERE id=%s
+            """, (full_name, email, phone, address, 
+                  int(branch_id) if branch_id else None, 
+                  int(dept_id) if dept_id else None, 
+                  int(desig_id) if desig_id else None, 
+                  emp_id))
+
+        conn.commit()
+        return jsonify({'status': 'success', 'msg': f"Employee {full_name} ({emp_code}) updated successfully!"})
+
+    except Exception as e:
+        return jsonify({'status': 'error', 'msg': str(e)}), 500
+    finally:
+        conn.close()
 
 @app.route('/employees/toggle_status/<int:emp_id>', methods=['POST'])
 @login_required

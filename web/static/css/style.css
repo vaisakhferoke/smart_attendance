@@ -1345,15 +1345,26 @@ video {
 }
 
 .table-avatar {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     background: rgba(99, 102, 241, 0.2);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--primary);
-    font-size: 0.85rem;
+    font-size: 1rem;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 1.5px solid rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+}
+
+.table-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
 }
 
 .empty-table {
@@ -1508,6 +1519,155 @@ video {
     margin-top: 1.25rem;
     padding-top: 1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Modal Large Variation & Form Input Controls */
+.modal-card.modal-lg {
+    max-width: 640px;
+}
+
+.modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.form-label {
+    font-size: 0.825rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.form-input,
+.form-select,
+.modal-card input:not([type="file"]):not([type="hidden"]),
+.modal-card select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(15, 23, 42, 0.75) !important;
+    border: 1px solid var(--input-border) !important;
+    border-radius: var(--radius-md) !important;
+    color: #ffffff !important;
+    font-family: inherit;
+    font-size: 0.9rem;
+    outline: none;
+    transition: var(--transition);
+    box-sizing: border-box;
+}
+
+.form-input:focus,
+.form-select:focus,
+.modal-card input:focus,
+.modal-card select:focus {
+    border-color: var(--input-focus) !important;
+    background: rgba(15, 23, 42, 0.95) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
+}
+
+.form-select option,
+.modal-card select option {
+    background-color: #0f172a !important;
+    color: #f3f4f6 !important;
+    padding: 0.5rem;
+}
+
+/* Custom File Upload Input Styling */
+input[type="file"].form-input,
+.modal-card input[type="file"] {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.825rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    background: rgba(15, 23, 42, 0.6) !important;
+}
+
+input[type="file"]::file-selector-button,
+.modal-card input[type="file"]::file-selector-button {
+    background: rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    color: #ffffff;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-weight: 600;
+    margin-right: 0.75rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+input[type="file"]::file-selector-button:hover,
+.modal-card input[type="file"]::file-selector-button:hover {
+    background: var(--primary);
+    color: #ffffff;
+}
+
+/* Photo Section Tab Bar */
+.photo-tab-bar {
+    display: flex;
+    gap: 0.5rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.35rem;
+    border-radius: var(--radius-md);
+    margin-top: 0.5rem;
+    margin-bottom: 0.85rem;
+}
+
+.photo-tab-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.825rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.photo-tab-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.photo-tab-btn.active {
+    background: linear-gradient(135deg, var(--primary), #4f46e5);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* Preview Avatar Container */
+.preview-avatar-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.8);
+    border: 2px solid var(--accent-cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.25);
+}
+
+.preview-avatar-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 /* Settings Sub-Navigation Bar */

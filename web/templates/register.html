@@ -130,11 +130,30 @@
     <!-- Right Panel: Camera & Biometric Capture Card -->
     <aside class="card scanner-card">
         <div class="card-header">
-            <h2><i class="fa-solid fa-camera"></i> Face Capture Scanner</h2>
-            <p>Position face within frame to generate biometric encoding vector.</p>
+            <h2><i class="fa-solid fa-camera"></i> Profile Picture & Biometrics</h2>
+            <p>Capture face via webcam or upload a profile picture file for SFace encoding.</p>
         </div>
 
-        <div class="camera-viewport">
+        <!-- Mode Toggle Tabs -->
+        <div class="photo-tab-bar" style="margin-bottom: 1rem;">
+            <button type="button" id="modeCamBtn" class="photo-tab-btn active" onclick="switchRegisterMode('camera')">
+                <i class="fa-solid fa-video"></i> Live Webcam Scanner
+            </button>
+            <button type="button" id="modeUploadBtn" class="photo-tab-btn" onclick="switchRegisterMode('upload')">
+                <i class="fa-solid fa-upload"></i> Upload Profile Picture
+            </button>
+        </div>
+
+        <!-- Option A: File Upload Box -->
+        <div id="fileUploadSection" style="display: none; margin-bottom: 1rem;">
+            <div class="input-group">
+                <label class="form-label" style="font-size: 0.85rem; font-weight: 700;"><i class="fa-solid fa-file-image"></i> Select Photo File</label>
+                <input type="file" id="profileFileInput" accept="image/*" class="form-input" onchange="handleFileSelect(this)" />
+            </div>
+            <span style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.35rem; display: block;">Select a clear front-facing face photo (JPG, PNG).</span>
+        </div>
+
+        <div class="camera-viewport" id="cameraViewport">
             <!-- Live Video Feed -->
             <div class="video-container" id="videoContainer">
                 <video id="video" autoplay playsinline muted></video>
@@ -153,24 +172,24 @@
                 </div>
             </div>
 
-            <!-- Snapshot Preview Box (Shown after capture) -->
+            <!-- Snapshot Preview Box (Shown after capture or file upload) -->
             <div class="snapshot-container" id="snapshotContainer" style="display: none;">
                 <img id="snapshotPreview" alt="Captured Face Preview" />
                 <div class="snapshot-overlay">
-                    <span class="captured-badge"><i class="fa-solid fa-circle-check"></i> Face Encoded</span>
+                    <span class="captured-badge" id="capturedBadge"><i class="fa-solid fa-circle-check"></i> Face Encoded</span>
                 </div>
             </div>
 
             <canvas id="canvas" style="display: none;"></canvas>
         </div>
 
-        <!-- Camera Controls -->
-        <div class="camera-actions">
+        <!-- Camera Actions -->
+        <div class="camera-actions" id="cameraActions">
             <button type="button" id="snapBtn" class="btn btn-secondary">
                 <i class="fa-solid fa-camera-retro"></i> Capture Face
             </button>
             <button type="button" id="retakeBtn" class="btn btn-outline" style="display: none;">
-                <i class="fa-solid fa-rotate-right"></i> Retake Photo
+                <i class="fa-solid fa-rotate-right"></i> Retake / Change Photo
             </button>
         </div>
 
@@ -181,8 +200,8 @@
                 <strong>Tips for best detection:</strong>
                 <ul>
                     <li>Ensure good front lighting</li>
-                    <li>Look directly at the webcam</li>
-                    <li>Avoid glasses or heavy occlusion</li>
+                    <li>Look directly at camera or photo</li>
+                    <li>Avoid heavy shadows or occlusion</li>
                 </ul>
             </div>
         </div>

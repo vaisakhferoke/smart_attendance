@@ -21,7 +21,7 @@ const toastMsg = document.getElementById('toastMsg');
 function showToast(message, type = 'info') {
     toastMsg.textContent = message;
     toast.className = `toast ${type}`;
-    
+
     if (type === 'success') {
         toastIcon.className = 'fa-solid fa-circle-check';
     } else if (type === 'error') {
@@ -88,7 +88,7 @@ form.addEventListener('submit', e => {
     e.preventDefault();
 
     if (!photoInput.value) {
-        showToast('Please capture your face photo before registering.', 'warning');
+        showToast('Please capture or select your face photo before registering.', 'warning');
         return;
     }
 
@@ -103,30 +103,68 @@ form.addEventListener('submit', e => {
         method: 'POST',
         body: formData
     })
-    .then(r => r.json())
-    .then(res => {
-        if (res.status === 'success') {
-            showToast(res.msg, 'success');
-            form.reset();
-            photoInput.value = '';
-            
-            // Reset Camera view
-            snapshotContainer.style.display = 'none';
-            videoContainer.style.display = 'block';
-            snapBtn.style.display = 'inline-flex';
-            retakeBtn.style.display = 'none';
-        } else {
-            showToast(res.msg || 'Registration failed.', 'error');
-        }
-    })
-    .catch(err => {
-        console.error('Registration error:', err);
-        showToast('Network error while saving data.', 'error');
-    })
-    .finally(() => {
-        // Reset loading state
-        btnText.style.display = 'inline-block';
-        btnSpinner.style.display = 'none';
-        submitBtn.disabled = false;
-    });
+        .then(r => r.json())
+        .then(res => {
+            if (res.status === 'success') {
+                showToast(res.msg, 'success');
+                form.reset();
+                photoInput.value = '';
+
+                // Reset Camera view
+                snapshotContainer.style.display = 'none';
+                videoContainer.style.display = 'block';
+                snapBtn.style.display = 'inline-flex';
+                retakeBtn.style.display = 'none';
+            } else {
+                showToast(res.msg || 'Registration failed.', 'error');
+            }
+        })
+        .catch(err => {
+            console.error('Registration error:', err);
+            showToast('Network error while saving data.', 'error');
+        })
+        .finally(() => {
+            // Reset loading state
+            btnText.style.display = 'inline-block';
+            btnSpinner.style.display = 'none';
+            submitBtn.disabled = false;
+        });
 });
+
+// Mode Switching (Webcam vs File Upload)
+function switchRegisterMode(mode) {
+    const fileSection = document.getElementById('fileUploadSection');
+    const cameraActions = document.getElementById('cameraActions');
+    const modeCamBtn = document.getElementById('modeCamBtn');
+    const modeUploadBtn = document.getElementById('modeUploadBtn');
+
+    if (mode === 'upload') {
+        fileSection.style.display = 'block';
+        cameraActions.style.display = 'none';
+        modeUploadBtn.className = 'photo-tab-btn active';
+        modeCamBtn.className = 'photo-tab-btn';
+    } else {
+        fileSection.style.display = 'none';
+        cameraActions.style.display = 'flex';
+        modeUploadBtn.className = 'photo-tab-btn';
+        modeCamBtn.className = 'photo-tab-btn active';
+        videoContainer.style.display = 'block';
+        snapshotContainer.style.display = 'none';
+    }
+}
+
+function handleFileSelect(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const dataURL = e.target.result;
+            photoInput.value = dataURL;
+            snapshotPreview.src = dataURL;
+            videoContainer.style.display = 'none';
+            snapshotContainer.style.display = 'block';
+            document.getElementById('capturedBadge').innerHTML = '<i class="fa-solid fa-circle-check"></i> Profile Photo Loaded';
+            showToast('Profile photo file loaded & ready!', 'success');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
