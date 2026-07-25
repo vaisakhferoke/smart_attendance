@@ -59,9 +59,9 @@
                     <span class="username">{{ session.get('username', 'Admin')|capitalize }}</span>
                     <span class="user-role">Administrator</span>
                 </div>
-                <a href="/logout" class="logout-btn" title="Sign Out">
+                <button type="button" class="logout-btn" onclick="openLogoutModal()" title="Sign Out">
                     <i class="fa-solid fa-right-from-bracket"></i>
-                </a>
+                </button>
             </div>
         </header>
 
@@ -69,6 +69,46 @@
         {% block content %}{% endblock %}
     </div>
 
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="modal-backdrop" style="display: none;">
+        <div class="modal-card glass" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-right-from-bracket" style="color: var(--accent-rose);"></i> Confirm Logout</h3>
+                <button type="button" class="modal-close" onclick="closeLogoutModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 0.5rem 0;">
+                <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; margin: 0;">Are you sure you want to log out of your session?</p>
+            </div>
+            <div class="modal-footer" style="margin-top: 0.5rem;">
+                <button type="button" class="btn btn-outline" onclick="closeLogoutModal()">Cancel</button>
+                <a href="/logout" class="btn btn-delete" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Yes, Logout
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            if (modal) modal.style.display = 'flex';
+        }
+        function closeLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            if (modal) modal.style.display = 'none';
+        }
+        window.addEventListener('click', function(e) {
+            const logoutModal = document.getElementById('logoutModal');
+            if (e.target === logoutModal) {
+                closeLogoutModal();
+            }
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeLogoutModal();
+            }
+        });
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
