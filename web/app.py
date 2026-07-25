@@ -20,18 +20,22 @@ def auto_migrate_employee_credentials():
         return
     try:
         cursor = conn.cursor()
-        try:
-            cursor.execute("ALTER TABLE employees ADD COLUMN username VARCHAR(100) NULL AFTER emp_code")
-            conn.commit()
-        except Exception:
-            pass
-        try:
-            cursor.execute("ALTER TABLE employees ADD COLUMN password VARCHAR(255) NULL AFTER username")
-            conn.commit()
-        except Exception:
-            pass
+        cols = [
+            ("username", "VARCHAR(100) NULL AFTER emp_code"),
+            ("password", "VARCHAR(255) NULL AFTER username"),
+            ("fcm_token", "TEXT NULL"),
+            ("app_version", "VARCHAR(50) NULL"),
+            ("app_platform", "VARCHAR(50) NULL"),
+            ("last_login_date", "DATETIME NULL")
+        ]
+        for col_name, col_def in cols:
+            try:
+                cursor.execute(f"ALTER TABLE employees ADD COLUMN {col_name} {col_def}")
+                conn.commit()
+            except Exception:
+                pass
     except Exception as err:
-        print(f"Employee credentials migration notice: {err}")
+        print(f"Employee schema auto-migration notice: {err}")
     finally:
         conn.close()
 
@@ -945,6 +949,19 @@ def scan_attendance():
             cursor.execute(insert_query, (emp_code, today_date, current_time_str))
             conn.commit()
             msg = f"Attendance Marked Successfully for {emp_name}!"
+
+            # Send FCM Push Notification to Employee upon successful check-in
+            try:
+                import fcm_service
+                fcm_service.send_attendance_notification(
+                    emp_code=emp_code,
+                    full_name=emp_name,
+                    in_time=current_time_str,
+                    department_name=matched_emp.get('department_name'),
+                    branch_name=matched_emp.get('branch_name')
+                )
+            except Exception as fcm_err:
+                print(f"FCM notification exception: {fcm_err}")
 
         return jsonify({
             'status': 'success',

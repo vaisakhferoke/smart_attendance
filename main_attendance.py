@@ -75,6 +75,18 @@ def mark_attendance_in_db(emp_code, emp_name):
             cursor.execute(insert_query, (emp_code, today_date, current_time))
             conn.commit()
             print(f"🎉 [ATTENDANCE MARKED SUCCESS] {emp_name} ({emp_code}) at {current_time}")
+
+            # Send FCM Push Notification to Employee upon successful check-in
+            try:
+                import fcm_service
+                fcm_service.send_attendance_notification(
+                    emp_code=emp_code,
+                    full_name=emp_name,
+                    in_time=current_time
+                )
+            except Exception as fcm_err:
+                print(f"FCM notification exception: {fcm_err}")
+
             return True, f"ATTENDANCE MARKED: {emp_name}"
 
     except Exception as e:
@@ -84,25 +96,35 @@ def mark_attendance_in_db(emp_code, emp_name):
         conn.close()
 
 def open_camera():
-    """Tries opening camera with DirectShow backend first, then MSMF / fallback indices."""
-    for backend in [cv2.CAP_DSHOW, cv2.CAP_MSMF, cv2.CAP_ANY]:
+    """Tries opening camera with CAP_ANY first, then CAP_DSHOW / MSMF across device indices."""
+    backends = [
+        ("CAP_ANY", cv2.CAP_ANY),
+        ("CAP_DSHOW", cv2.CAP_DSHOW),
+        ("CAP_MSMF", cv2.CAP_MSMF)
+    ]
+    for bname, backend in backends:
         for index in [0, 1, 2]:
-            cam = cv2.VideoCapture(index, backend)
-            if cam.isOpened():
-                # Allow camera sensor to warm up & auto-exposure to adjust
-                valid_frame = False
-                for _ in range(10):
-                    ret, frame = cam.read()
-                    if ret and frame is not None and frame.size > 0 and np.mean(frame) > 5.0:
-                        valid_frame = True
-                if valid_frame:
-                    return cam
-                cam.release()
+            try:
+                cam = cv2.VideoCapture(index, backend)
+                if cam.isOpened():
+                    valid_read = False
+                    for _ in range(15):
+                        ret, frame = cam.read()
+                        if ret and frame is not None and frame.size > 0:
+                            valid_read = True
+                            break
+                        time.sleep(0.05)
+                    if valid_read:
+                        print(f"📷 [INFO] Camera connected successfully (index {index}, backend {bname}).")
+                        return cam
+                    cam.release()
+            except Exception:
+                pass
     return None
 
 def start_attendance_system():
-    print("\n🔄 Checking and migrating database face encodings...")
-    face_utils.auto_migrate_legacy_encodings()
+    print("\n🔄 Checking database face encodings...")
+    face_utils.auto_migrate_legacy_encodings(force_reencode=False)
 
     registered_employees = fetch_all_registered_employees()
     if not registered_employees:
@@ -115,11 +137,14 @@ def start_attendance_system():
         print("💡 TIP: Please close any open web browser tabs using the camera and try again.\n")
         return
 
-    print("\n🎥 [INFO] Smart Attendance Scanner Started...")
+    print("\n🎥 [INFO] Smart Attendance Scanner Started (High Accuracy SFace Engine)...")
     print("Press 'q' in the camera window to exit.\n")
 
     status_message = ""
     status_time = 0
+    consecutive_tracker = {}
+    CONSECUTIVE_REQUIRED = 2  # Requires 2 consecutive positive frames to confirm attendance
+    MIN_FACE_SIZE = 45        # Filter out tiny distant noise faces (< 45x45 px)
 
     while True:
         ret, frame = cam.read()
@@ -128,8 +153,13 @@ def start_attendance_system():
             break
 
         boxes, yunet_faces = face_utils.detect_faces(frame)
+        current_frame_matched_codes = set()
 
         for i, (x, y, w, h) in enumerate(boxes):
+            # Skip tiny background face regions
+            if w < MIN_FACE_SIZE or h < MIN_FACE_SIZE:
+                continue
+
             yunet_face = yunet_faces[i] if yunet_faces is not None and i < len(yunet_faces) else None
             current_encoding = face_utils.extract_face_encoding(frame, bbox=(x, y, w, h), yunet_face=yunet_face)
 
@@ -145,24 +175,41 @@ def start_attendance_system():
                             matched_emp = emp
 
             if matched_emp:
-                name = matched_emp["name"]
                 emp_code = matched_emp["emp_code"]
+                name = matched_emp["name"]
+                current_frame_matched_codes.add(emp_code)
 
-                # Green box around recognized face
-                cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                cv2.putText(frame, f"{name} ({emp_code}) [{best_similarity:.2f}]", (x, max(20, y-10)), 
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                consecutive_tracker[emp_code] = consecutive_tracker.get(emp_code, 0) + 1
+                match_count = consecutive_tracker[emp_code]
 
-                # Mark attendance in database
-                success, msg = mark_attendance_in_db(emp_code, name)
-                status_message = msg
-                status_time = time.time()
+                if match_count >= CONSECUTIVE_REQUIRED:
+                    # Verified match -> Green Box
+                    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                    cv2.putText(frame, f"✅ {name} ({emp_code}) [{best_similarity:.2f}]", (x, max(20, y-10)), 
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
+                    # Mark attendance in database once verified
+                    success, msg = mark_attendance_in_db(emp_code, name)
+                    status_message = msg
+                    status_time = time.time()
+                else:
+                    # Multi-frame verification in progress -> Yellow Box
+                    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 255), 2)
+                    cv2.putText(frame, f"Verifying {name}... [{best_similarity:.2f}]", (x, max(20, y-10)), 
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 255, 255), 2)
             else:
-                # Red box for unrecognized face
+                # Unrecognized face -> Red Box
                 label = f"Unknown ({best_similarity:.2f})" if best_similarity > -1.0 else "Unknown Face"
                 cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 2)
                 cv2.putText(frame, label, (x, max(20, y-10)), 
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
+        # Decay consecutive match counts for employees not detected in current frame
+        for code in list(consecutive_tracker.keys()):
+            if code not in current_frame_matched_codes:
+                consecutive_tracker[code] = max(0, consecutive_tracker[code] - 1)
+                if consecutive_tracker[code] == 0:
+                    del consecutive_tracker[code]
 
         # On-Screen Notification Banner
         if status_message and (time.time() - status_time < 3.5):

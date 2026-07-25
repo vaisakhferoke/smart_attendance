@@ -17,20 +17,47 @@ const resetProgressBar = document.getElementById('resetProgressBar');
 let isScanning = true;
 let scanInterval = null;
 let cooldownTimer = null;
+let currentStream = null;
 
-// Connect webcam
-navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 } } })
-    .then(stream => {
-        video.srcObject = stream;
-        scanStatus.innerHTML = '<i class="fa-solid fa-face-viewfinder"></i> Auto-scanning face... Position in camera.';
-        // Start continuous auto scanning loop
-        scanInterval = setInterval(captureAndScanFrame, 1200);
-    })
-    .catch(err => {
-        console.error('Camera access error:', err);
-        scanStatus.className = 'scan-status-text error';
-        scanStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Camera Access Denied or Busy.';
-    });
+function initWebcam() {
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+    }
+
+    scanStatus.className = 'scan-status-text';
+    scanStatus.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Initializing camera stream...';
+
+    const constraints = {
+        video: {
+            width: { ideal: 1280, max: 1920 },
+            height: { ideal: 720, max: 1080 },
+            facingMode: 'user'
+        }
+    };
+
+    navigator.mediaDevices.getUserMedia(constraints)
+        .catch(() => navigator.mediaDevices.getUserMedia({ video: true }))
+        .then(stream => {
+            currentStream = stream;
+            video.srcObject = stream;
+            video.onloadedmetadata = () => {
+                video.play().catch(err => console.warn('Video play error:', err));
+            };
+
+            scanStatus.innerHTML = '<i class="fa-solid fa-face-viewfinder"></i> Auto-scanning face... Position in camera.';
+
+            if (scanInterval) clearInterval(scanInterval);
+            scanInterval = setInterval(captureAndScanFrame, 1200);
+        })
+        .catch(err => {
+            console.error('Camera access error:', err);
+            scanStatus.className = 'scan-status-text error';
+            scanStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Camera Access Denied or Device Busy. <button onclick="initWebcam()" style="background:#2563eb; color:#fff; border:none; padding:4px 10px; border-radius:4px; margin-left:8px; cursor:pointer;"><i class="fa-solid fa-rotate-right"></i> Retry</button>';
+        });
+}
+
+// Start webcam on page load
+initWebcam();
 
 function captureAndScanFrame() {
     if (!isScanning || !video.srcObject) return;
@@ -47,24 +74,24 @@ function captureAndScanFrame() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ photo: dataURL })
     })
-    .then(r => r.json())
-    .then(res => {
-        if (!isScanning) return; // if scanning was paused while request was in-flight
+        .then(r => r.json())
+        .then(res => {
+            if (!isScanning) return; // if scanning was paused while request was in-flight
 
-        if (res.status === 'success') {
-            if (res.recognized && res.employee) {
-                // Face recognized! Pause scanning and display employee details popup
-                triggerRecognizedEmployee(res.employee, res.msg, res.already_marked);
+            if (res.status === 'success') {
+                if (res.recognized && res.employee) {
+                    // Face recognized! Pause scanning and display employee details popup
+                    triggerRecognizedEmployee(res.employee, res.msg, res.already_marked);
+                } else {
+                    scanStatus.innerHTML = `<i class="fa-solid fa-face-viewfinder"></i> ${res.msg || 'Position face clearly...'}`;
+                }
             } else {
-                scanStatus.innerHTML = `<i class="fa-solid fa-face-viewfinder"></i> ${res.msg || 'Position face clearly...'}`;
+                console.warn('Scan notice:', res.msg);
             }
-        } else {
-            console.warn('Scan notice:', res.msg);
-        }
-    })
-    .catch(err => {
-        console.error('Scan API error:', err);
-    });
+        })
+        .catch(err => {
+            console.error('Scan API error:', err);
+        });
 }
 
 function triggerRecognizedEmployee(emp, message, alreadyMarked) {
@@ -95,7 +122,7 @@ function triggerRecognizedEmployee(emp, message, alreadyMarked) {
     // Start progress bar animation (4 seconds)
     resetProgressBar.style.transition = 'none';
     resetProgressBar.style.width = '100%';
-    
+
     setTimeout(() => {
         resetProgressBar.style.transition = 'width 4s linear';
         resetProgressBar.style.width = '0%';

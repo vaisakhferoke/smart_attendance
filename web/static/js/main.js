@@ -34,15 +34,27 @@ function showToast(message, type = 'info') {
 }
 
 // Access webcam stream
-navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 } } })
-    .then(stream => {
-        video.srcObject = stream;
-        showToast('Webcam connected. Position your face in frame.', 'info');
-    })
-    .catch(err => {
-        console.error('Camera access error:', err);
-        showToast('Camera error: Unable to access webcam.', 'error');
-    });
+function initMainWebcam() {
+    navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } })
+        .catch(() => navigator.mediaDevices.getUserMedia({ video: true }))
+        .then(stream => {
+            if (video) {
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    video.play().catch(err => console.warn('Video play error:', err));
+                };
+            }
+            showToast('Webcam connected. Position your face in frame.', 'info');
+        })
+        .catch(err => {
+            console.error('Camera access error:', err);
+            showToast('Camera error: Unable to access webcam. Ensure camera is connected & permissions granted.', 'error');
+        });
+}
+
+if (video) {
+    initMainWebcam();
+}
 
 // Capture Photo Action
 snapBtn.addEventListener('click', () => {
