@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Attendance - Admin Dashboard{% endblock %}
+{% block page_subtitle %}Admin Control Portal{% endblock %}
+
+{% block content %}
+<!-- Dashboard Hero Banner -->
+<div class="dashboard-hero card">
+    <div class="hero-text">
+        <h2>Welcome back, {{ session.get('username', 'Admin')|capitalize }}! 👋</h2>
+        <p>Real-time biometric attendance metrics and employee management controls.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="/attendance" class="btn btn-secondary">
+            <i class="fa-solid fa-circle-play"></i> Launch Scanner
+        </a>
+        <a href="/register-employee" class="btn btn-primary">
+            <i class="fa-solid fa-user-plus"></i> Add Employee
+        </a>
+    </div>
+</div>
+
+<!-- 4 Stat Analytics Cards -->
+<div class="stats-grid">
+    <!-- Total Employees -->
+    <div class="stat-card glass">
+        <div class="stat-icon icon-blue">
+            <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="stat-data">
+            <span class="stat-label">Active Employees</span>
+            <h3 class="stat-number">{{ total_employees }}</h3>
+            <span class="stat-subtext"><i class="fa-solid fa-circle-check"></i> Registered in DB</span>
+        </div>
+    </div>
+
+    <!-- Departments -->
+    <div class="stat-card glass">
+        <div class="stat-icon icon-cyan">
+            <i class="fa-solid fa-building"></i>
+        </div>
+        <div class="stat-data">
+            <span class="stat-label">Departments</span>
+            <h3 class="stat-number">{{ total_departments }}</h3>
+            <span class="stat-subtext"><i class="fa-solid fa-layer-group"></i> Active Divisions</span>
+        </div>
+    </div>
+
+    <!-- Today's Attendance -->
+    <div class="stat-card glass">
+        <div class="stat-icon icon-emerald">
+            <i class="fa-solid fa-calendar-check"></i>
+        </div>
+        <div class="stat-data">
+            <span class="stat-label">Today's Present</span>
+            <h3 class="stat-number">{{ today_attendance }}</h3>
+            <span class="stat-subtext"><i class="fa-solid fa-clock"></i> Checked In Today</span>
+        </div>
+    </div>
+
+    <!-- Attendance Rate -->
+    <div class="stat-card glass">
+        <div class="stat-icon icon-purple">
+            <i class="fa-solid fa-chart-line"></i>
+        </div>
+        <div class="stat-data">
+            <span class="stat-label">Attendance Rate</span>
+            <h3 class="stat-number">{{ attendance_rate }}%</h3>
+            <span class="stat-subtext"><i class="fa-solid fa-bolt"></i> Daily Completion</span>
+        </div>
+    </div>
+</div>
+
+<!-- Main Dashboard Table & Activity Grid -->
+<div class="dashboard-body-grid">
+    <div class="card table-card">
+        <div class="card-header">
+            <h2><i class="fa-solid fa-list-check"></i> Today's Attendance Log</h2>
+            <p>Live check-in activity for {{ current_date }}</p>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Emp Code</th>
+                        <th>Department</th>
+                        <th>Designation</th>
+                        <th>In Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if recent_attendance %}
+                        {% for row in recent_attendance %}
+                            <tr>
+                                <td class="emp-name-cell">
+                                    <div class="table-avatar">
+                                        <i class="fa-solid fa-user"></i>
+                                    </div>
+                                    <strong>{{ row.full_name }}</strong>
+                                </td>
+                                <td><code>{{ row.emp_code }}</code></td>
+                                <td>{{ row.department_name or 'General' }}</td>
+                                <td>{{ row.designation_name or 'Staff' }}</td>
+                                <td class="highlight-time">{{ row.in_time }}</td>
+                                <td>
+                                    <span class="status-pill success">
+                                        <i class="fa-solid fa-check"></i> {{ row.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="empty-table">
+                                <i class="fa-solid fa-clock-rotate-left"></i> No attendance check-ins recorded yet today.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

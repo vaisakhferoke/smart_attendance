@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Attendance - Live Camera Scanner{% endblock %}
+{% block page_subtitle %}Live Scanner Portal{% endblock %}
+
+{% block content %}
+<!-- Main Scanner Grid -->
+<div class="dashboard-grid">
+    <!-- Left Panel: Live Camera Feed -->
+    <main class="card scanner-card">
+        <div class="card-header">
+            <h2><i class="fa-solid fa-video"></i> Camera Biometric Stream</h2>
+            <p>Facing camera automatically detects registered face and records attendance.</p>
+        </div>
+
+        <div class="camera-viewport">
+            <div class="video-container">
+                <video id="video" autoplay playsinline muted></video>
+
+                <!-- Sci-Fi Camera Overlays -->
+                <div class="scan-frame">
+                    <div class="corner top-left"></div>
+                    <div class="corner top-right"></div>
+                    <div class="corner bottom-left"></div>
+                    <div class="corner bottom-right"></div>
+                    <div class="scan-line"></div>
+                </div>
+
+                <div class="camera-badge" id="cameraBadge">
+                    <i class="fa-solid fa-circle-dot"></i> Live Scanner Active
+                </div>
+            </div>
+            <canvas id="canvas" style="display: none;"></canvas>
+        </div>
+
+        <div class="scanner-status-bar">
+            <div id="scanStatus" class="scan-status-text">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Initializing camera...
+            </div>
+        </div>
+    </main>
+
+    <!-- Right Panel: Recognized User Details Display -->
+    <aside class="card result-card">
+        <div class="card-header">
+            <h2><i class="fa-solid fa-id-card"></i> Recognized Employee</h2>
+            <p>Verified employee profile & attendance log.</p>
+        </div>
+
+        <!-- Idle State Placeholder -->
+        <div id="idleState" class="result-placeholder">
+            <div class="placeholder-icon">
+                <i class="fa-solid fa-user-check"></i>
+            </div>
+            <h3>Waiting for Face Recognition...</h3>
+            <p>Position face within frame. When recognized, employee details will automatically appear below.</p>
+        </div>
+
+        <!-- Employee Details Popup Card (Hidden initially) -->
+        <div id="resultState" class="employee-result-card" style="display: none;">
+            <div class="result-header">
+                <div class="result-avatar" id="avatarContainer">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="result-title">
+                    <h3 id="empFullName">John Doe</h3>
+                    <span class="emp-code-badge" id="empCodeBadge">EMP-101</span>
+                </div>
+            </div>
+
+            <div class="result-details-grid">
+                <div class="detail-box">
+                    <span class="detail-label"><i class="fa-solid fa-building"></i> Department</span>
+                    <strong class="detail-value" id="empDepartment">Information Technology</strong>
+                </div>
+
+                <div class="detail-box">
+                    <span class="detail-label"><i class="fa-solid fa-briefcase"></i> Designation</span>
+                    <strong class="detail-value" id="empDesignation">Software Engineer</strong>
+                </div>
+
+                <div class="detail-box">
+                    <span class="detail-label"><i class="fa-solid fa-clock"></i> Check-in Time</span>
+                    <strong class="detail-value highlight-time" id="empInTime">10:30 AM</strong>
+                </div>
+
+                <div class="detail-box">
+                    <span class="detail-label"><i class="fa-solid fa-clipboard-check"></i> Status</span>
+                    <span class="status-pill success" id="empStatusPill">
+                        <i class="fa-solid fa-check"></i> PRESENT
+                    </span>
+                </div>
+            </div>
+
+            <div class="result-footer">
+                <div class="progress-bar-wrap">
+                    <div id="resetProgressBar" class="progress-bar-fill"></div>
+                </div>
+                <span class="reset-hint">Next scan ready in 4 seconds</span>
+            </div>
+        </div>
+    </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/attendance.js') }}"></script>
+{% endblock %}

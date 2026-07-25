@@ -1,0 +1,690 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Attendance - System Settings{% endblock %}
+{% block page_subtitle %}System Settings{% endblock %}
+
+{% block content %}
+<!-- Settings Sub-Navigation Tabs Bar -->
+<div class="settings-tabs-bar">
+    <a href="/settings/company" class="tab-btn {% if active_tab == 'company' %}active{% endif %}">
+        <i class="fa-solid fa-building-user"></i> Company Profile
+    </a>
+    <a href="/settings/branches" class="tab-btn {% if active_tab == 'branches' %}active{% endif %}">
+        <i class="fa-solid fa-code-branch"></i> Branches
+    </a>
+    <a href="/settings/departments" class="tab-btn {% if active_tab == 'departments' %}active{% endif %}">
+        <i class="fa-solid fa-building"></i> Departments
+    </a>
+    <a href="/settings/designations" class="tab-btn {% if active_tab == 'designations' %}active{% endif %}">
+        <i class="fa-solid fa-briefcase"></i> Designations
+    </a>
+    <a href="/settings/users" class="tab-btn {% if active_tab == 'users' %}active{% endif %}">
+        <i class="fa-solid fa-user-shield"></i> User Management
+    </a>
+</div>
+
+<!-- Toast Notification Alert -->
+<div id="alertMsg" class="toast" style="display: none; margin-top: 1rem; margin-bottom: 1rem;"></div>
+
+<!-- TAB 1: COMPANY PROFILE -->
+{% if active_tab == 'company' %}
+<div class="card form-card" style="margin-top: 1rem;">
+    <div class="card-header flex-header">
+        <div>
+            <h2><i class="fa-solid fa-building-user"></i> Company Information</h2>
+            <p>View and manage organization profile, logo, and contact details.</p>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="openEditCompanyModal()">
+            <i class="fa-solid fa-pen-to-square"></i> Edit Company Profile
+        </button>
+    </div>
+
+    <div class="company-profile-view">
+        <div class="company-hero-badge">
+            <div class="company-logo-preview">
+                {% if company and company.logo_path %}
+                <img src="{{ url_for('static', filename=company.logo_path) }}" alt="Company Logo" id="companyLogoImg" />
+                {% else %}
+                <div class="logo-fallback-icon">
+                    <i class="fa-solid fa-building-columns"></i>
+                </div>
+                {% endif %}
+            </div>
+            <div class="company-hero-details">
+                <h3>{{ company.company_name if company else 'Smart Attendance Corp' }}</h3>
+                <span class="badge success"><i class="fa-solid fa-circle-check"></i> Registered Entity</span>
+            </div>
+        </div>
+
+        <div class="result-details-grid" style="margin-top: 1.5rem;">
+            <div class="detail-box">
+                <span class="detail-label"><i class="fa-solid fa-envelope"></i> Email Address</span>
+                <strong class="detail-value">{{ company.email if company else 'N/A' }}</strong>
+            </div>
+
+            <div class="detail-box">
+                <span class="detail-label"><i class="fa-solid fa-phone"></i> Phone Number</span>
+                <strong class="detail-value">{{ company.phone if company else 'N/A' }}</strong>
+            </div>
+
+            <div class="detail-box" style="grid-column: 1 / -1;">
+                <span class="detail-label"><i class="fa-solid fa-location-dot"></i> Headquarters Address</span>
+                <strong class="detail-value">{{ company.address if company else 'N/A' }}</strong>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- TAB 2: BRANCHES -->
+{% if active_tab == 'branches' %}
+<div class="card table-card" style="margin-top: 1rem;">
+    <div class="card-header flex-header">
+        <div>
+            <h2><i class="fa-solid fa-code-branch"></i> Branch Management</h2>
+            <p>Manage office locations and company branches.</p>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="openAddBranchModal()">
+            <i class="fa-solid fa-plus"></i> Add Branch
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Branch Code</th>
+                    <th>Branch Name</th>
+                    <th>Location / City</th>
+                    <th>Assigned Staff</th>
+                    <th>Created Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if branches %}
+                {% for b in branches %}
+                <tr>
+                    <td><code>{{ b.branch_code }}</code></td>
+                    <td><strong><i class="fa-solid fa-building-circle-check text-primary"></i> {{ b.branch_name
+                            }}</strong></td>
+                    <td>{{ b.location or 'N/A' }}</td>
+                    <td><span class="badge-count"><i class="fa-solid fa-users"></i> {{ b.employee_count }} staff</span>
+                    </td>
+                    <td>{{ b.created_at_display }}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button type="button" class="btn-action btn-edit"
+                                onclick="openEditBranchModal('{{ b.id }}', '{{ b.branch_name }}', '{{ b.branch_code }}', '{{ b.location }}')">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                            <button type="button" class="btn-action btn-delete"
+                                onclick="deleteBranch('{{ b.id }}', '{{ b.branch_name }}')">
+                                <i class="fa-solid fa-trash-can"></i> Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="6" class="empty-table">
+                        <i class="fa-solid fa-folder-open"></i> No branches found. Click "Add Branch" to create one.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- TAB 3: DEPARTMENTS -->
+{% if active_tab == 'departments' %}
+<div class="card table-card" style="margin-top: 1rem;">
+    <div class="card-header flex-header">
+        <div>
+            <h2><i class="fa-solid fa-building"></i> Departments Management</h2>
+            <p>Add, edit, or remove organizational departments.</p>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="openAddDeptModal()">
+            <i class="fa-solid fa-plus"></i> Add Department
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Department Name</th>
+                    <th>Total Employees</th>
+                    <th>Created Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if departments %}
+                {% for dept in departments %}
+                <tr>
+                    <td><span class="emp-code-badge">#{{ dept.id }}</span></td>
+                    <td><strong><i class="fa-solid fa-building text-primary"></i> {{ dept.department_name }}</strong>
+                    </td>
+                    <td><span class="badge-count"><i class="fa-solid fa-users"></i> {{ dept.employee_count }}
+                            staff</span></td>
+                    <td>{{ dept.created_at_display }}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button type="button" class="btn-action btn-edit"
+                                onclick="openEditDeptModal('{{ dept.id }}', '{{ dept.department_name }}')">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                            <button type="button" class="btn-action btn-delete"
+                                onclick="deleteDept('{{ dept.id }}', '{{ dept.department_name }}')">
+                                <i class="fa-solid fa-trash-can"></i> Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="5" class="empty-table">
+                        <i class="fa-solid fa-folder-open"></i> No departments found.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- TAB 4: DESIGNATIONS -->
+{% if active_tab == 'designations' %}
+<div class="card table-card" style="margin-top: 1rem;">
+    <div class="card-header flex-header">
+        <div>
+            <h2><i class="fa-solid fa-briefcase"></i> Designations Management</h2>
+            <p>Add, edit, or remove employee job titles.</p>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="openAddDesigModal()">
+            <i class="fa-solid fa-plus"></i> Add Designation
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Designation Name</th>
+                    <th>Total Employees</th>
+                    <th>Created Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if designations %}
+                {% for desig in designations %}
+                <tr>
+                    <td><span class="emp-code-badge">#{{ desig.id }}</span></td>
+                    <td><strong><i class="fa-solid fa-briefcase text-primary"></i> {{ desig.designation_name }}</strong>
+                    </td>
+                    <td><span class="badge-count"><i class="fa-solid fa-users"></i> {{ desig.employee_count }}
+                            staff</span></td>
+                    <td>{{ desig.created_at_display }}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button type="button" class="btn-action btn-edit"
+                                onclick="openEditDesigModal('{{ desig.id }}', '{{ desig.designation_name }}')">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                            <button type="button" class="btn-action btn-delete"
+                                onclick="deleteDesig('{{ desig.id }}', '{{ desig.designation_name }}')">
+                                <i class="fa-solid fa-trash-can"></i> Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="5" class="empty-table">
+                        <i class="fa-solid fa-folder-open"></i> No designations found.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- TAB 5: USER MANAGEMENT -->
+{% if active_tab == 'users' %}
+<div class="card table-card" style="margin-top: 1rem;">
+    <div class="card-header flex-header">
+        <div>
+            <h2><i class="fa-solid fa-user-shield"></i> System User Management</h2>
+            <p>Manage portal administrator and user login credentials.</p>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="openAddUserModal()">
+            <i class="fa-solid fa-user-plus"></i> Create New User
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Email Address</th>
+                    <th>Role</th>
+                    <th>Created Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if system_users %}
+                {% for u in system_users %}
+                <tr>
+                    <td><span class="emp-code-badge">#{{ u.id }}</span></td>
+                    <td><strong><i class="fa-solid fa-user-gear text-primary"></i> {{ u.username }}</strong></td>
+                    <td>{{ u.email }}</td>
+                    <td>
+                        <span class="status-pill success">
+                            <i class="fa-solid fa-shield"></i> {{ u.role|upper }}
+                        </span>
+                    </td>
+                    <td>{{ u.created_at_display }}</td>
+                    <td>
+                        {% if u.username != 'admin' %}
+                        <button type="button" class="btn-action btn-delete"
+                            onclick="deleteUser('{{ u.id }}', '{{ u.username }}')">
+                            <i class="fa-solid fa-trash-can"></i> Delete
+                        </button>
+                        {% else %}
+                        <span class="text-dim"><i class="fa-solid fa-lock"></i> Protected</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="6" class="empty-table">No users found.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal Backdrop -->
+<div id="modalBackdrop" class="modal-backdrop" style="display: none;">
+    <div class="modal-card glass">
+        <div class="modal-header">
+            <h3 id="modalTitle">Modal Header</h3>
+            <button type="button" class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+
+        <!-- Company Edit Form -->
+        <form id="companyForm" onsubmit="handleCompanySubmit(event)" enctype="multipart/form-data"
+            style="display: none;">
+            <div class="form-group">
+                <label for="companyNameInput">Company Name <span class="required">*</span></label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-building-user input-icon"></i>
+                    <input type="text" id="companyNameInput" name="company_name"
+                        value="{{ company.company_name if company else '' }}" required />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="companyEmailInput">Company Email <span class="required">*</span></label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-envelope input-icon"></i>
+                    <input type="email" id="companyEmailInput" name="email"
+                        value="{{ company.email if company else '' }}" required />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="companyPhoneInput">Phone Number</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-phone input-icon"></i>
+                    <input type="text" id="companyPhoneInput" name="phone"
+                        value="{{ company.phone if company else '' }}" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="companyAddressInput">Headquarters Address</label>
+                <div class="input-wrapper textarea-wrapper">
+                    <i class="fa-solid fa-location-dot input-icon"></i>
+                    <textarea id="companyAddressInput" name="address"
+                        rows="2">{{ company.address if company else '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="logoFileInput">Company Logo Image</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-image input-icon"></i>
+                    <input type="file" id="logoFileInput" name="logo" accept="image/*" />
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Update
+                    Profile</button>
+            </div>
+        </form>
+
+        <!-- Branch Form -->
+        <form id="branchForm" onsubmit="handleBranchSubmit(event)" style="display: none;">
+            <input type="hidden" id="branchId" name="branch_id" />
+            <div class="form-group">
+                <label for="branchName">Branch Name <span class="required">*</span></label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-building-circle-check input-icon"></i>
+                    <input type="text" id="branchName" name="branch_name" placeholder="e.g. West Coast Branch"
+                        required />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="branchCode">Branch Code <span class="required">*</span></label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-barcode input-icon"></i>
+                    <input type="text" id="branchCode" name="branch_code" placeholder="e.g. BR-02" required />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="branchLocation">Location / City</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-map-pin input-icon"></i>
+                    <input type="text" id="branchLocation" name="location" placeholder="e.g. San Francisco, CA" />
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save Branch</button>
+            </div>
+        </form>
+
+        <!-- Department / Designation Generic Form -->
+        <form id="genericForm" onsubmit="handleGenericSubmit(event)" style="display: none;">
+            <input type="hidden" id="entityId" />
+            <input type="hidden" id="entityType" />
+            <div class="form-group">
+                <label id="entityLabel">Name</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-pen input-icon"></i>
+                    <input type="text" id="entityName" required />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save</button>
+            </div>
+        </form>
+
+        <!-- User Creation Form -->
+        <form id="userForm" onsubmit="handleUserSubmit(event)" style="display: none;">
+            <div class="form-group">
+                <label for="newUsername">Username <span class="required">*</span></label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user input-icon"></i>
+                    <input type="text" id="newUsername" name="username" placeholder="johndoe" required />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="newEmail">Email Address <span class="required">*</span></label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-envelope input-icon"></i>
+                    <input type="email" id="newEmail" name="email" placeholder="john@example.com" required />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="newPassword">Password <span class="required">*</span></label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-lock input-icon"></i>
+                    <input type="password" id="newPassword" name="password" placeholder="••••••••" required />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="newRole">Role</label>
+                <div class="input-wrapper select-wrapper">
+                    <i class="fa-solid fa-shield input-icon"></i>
+                    <select id="newRole" name="role">
+                        <option value="admin" selected>Administrator</option>
+                        <option value="manager">Manager</option>
+                        <option value="operator">Operator</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down select-arrow"></i>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> Create User</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const modalTitle = document.getElementById('modalTitle');
+    const companyForm = document.getElementById('companyForm');
+    const branchForm = document.getElementById('branchForm');
+    const genericForm = document.getElementById('genericForm');
+    const userForm = document.getElementById('userForm');
+    const alertMsg = document.getElementById('alertMsg');
+
+    function showAlert(msg, type = 'success') {
+        alertMsg.style.display = 'flex';
+        alertMsg.className = `toast ${type}`;
+        alertMsg.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-xmark'}"></i> ${msg}`;
+        setTimeout(() => { alertMsg.style.display = 'none'; }, 4000);
+    }
+
+    function closeModal() { modalBackdrop.style.display = 'none'; }
+
+    // COMPANY PROFILE
+    function openEditCompanyModal() {
+        modalTitle.innerHTML = '<i class="fa-solid fa-building-user"></i> Edit Company Profile';
+        companyForm.style.display = 'block';
+        branchForm.style.display = 'none';
+        genericForm.style.display = 'none';
+        userForm.style.display = 'none';
+        modalBackdrop.style.display = 'flex';
+    }
+
+    function handleCompanySubmit(e) {
+        e.preventDefault();
+        const formData = new FormData(companyForm);
+        fetch('/company/update', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') { closeModal(); location.reload(); }
+                else showAlert(res.msg || 'Error updating company profile', 'error');
+            });
+    }
+
+    // BRANCHES
+    function openAddBranchModal() {
+        document.getElementById('branchId').value = '';
+        document.getElementById('branchName').value = '';
+        document.getElementById('branchCode').value = '';
+        document.getElementById('branchLocation').value = '';
+        modalTitle.innerHTML = '<i class="fa-solid fa-code-branch"></i> Add Branch';
+        companyForm.style.display = 'none';
+        branchForm.style.display = 'block';
+        genericForm.style.display = 'none';
+        userForm.style.display = 'none';
+        modalBackdrop.style.display = 'flex';
+    }
+
+    function openEditBranchModal(id, name, code, locationStr) {
+        document.getElementById('branchId').value = id;
+        document.getElementById('branchName').value = name;
+        document.getElementById('branchCode').value = code;
+        document.getElementById('branchLocation').value = locationStr;
+        modalTitle.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Edit Branch';
+        companyForm.style.display = 'none';
+        branchForm.style.display = 'block';
+        genericForm.style.display = 'none';
+        userForm.style.display = 'none';
+        modalBackdrop.style.display = 'flex';
+    }
+
+    function handleBranchSubmit(e) {
+        e.preventDefault();
+        const id = document.getElementById('branchId').value;
+        const url = id ? `/branches/edit/${id}` : '/branches/add';
+        const formData = new FormData(branchForm);
+        fetch(url, { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') { closeModal(); location.reload(); }
+                else alert(res.msg || 'Error saving branch');
+            });
+    }
+
+    function deleteBranch(id, name) {
+        if (!confirm(`Delete branch "${name}"?`)) return;
+        fetch(`/branches/delete/${id}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(res => { if (res.status === 'success') location.reload(); else showAlert(res.msg, 'error'); });
+    }
+
+    // DEPARTMENTS & DESIGNATIONS
+    function openAddDeptModal() {
+        document.getElementById('entityId').value = '';
+        document.getElementById('entityType').value = 'dept';
+        document.getElementById('entityName').value = '';
+        document.getElementById('entityLabel').textContent = 'Department Name';
+        modalTitle.innerHTML = '<i class="fa-solid fa-building"></i> Add Department';
+        companyForm.style.display = 'none';
+        branchForm.style.display = 'none';
+        genericForm.style.display = 'block';
+        userForm.style.display = 'none';
+        modalBackdrop.style.display = 'flex';
+    }
+
+    function openEditDeptModal(id, name) {
+        document.getElementById('entityId').value = id;
+        document.getElementById('entityType').value = 'dept';
+        document.getElementById('entityName').value = name;
+        document.getElementById('entityLabel').textContent = 'Department Name';
+        modalTitle.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Edit Department';
+        companyForm.style.display = 'none';
+        branchForm.style.display = 'none';
+        genericForm.style.display = 'block';
+        userForm.style.display = 'none';
+        modalBackdrop.style.display = 'flex';
+    }
+
+    function deleteDept(id, name) {
+        if (!confirm(`Delete department "${name}"?`)) return;
+        fetch(`/departments/delete/${id}`, { method: 'POST' })
+            .then(r => r.json()).then(res => { if (res.status === 'success') location.reload(); else showAlert(res.msg, 'error'); });
+    }
+
+    function openAddDesigModal() {
+        document.getElementById('entityId').value = '';
+        document.getElementById('entityType').value = 'desig';
+        document.getElementById('entityName').value = '';
+        document.getElementById('entityLabel').textContent = 'Designation Name';
+        modalTitle.innerHTML = '<i class="fa-solid fa-briefcase"></i> Add Designation';
+        companyForm.style.display = 'none';
+        branchForm.style.display = 'none';
+        genericForm.style.display = 'block';
+        userForm.style.display = 'none';
+        modalBackdrop.style.display = 'flex';
+    }
+
+    function openEditDesigModal(id, name) {
+        document.getElementById('entityId').value = id;
+        document.getElementById('entityType').value = 'desig';
+        document.getElementById('entityName').value = name;
+        document.getElementById('entityLabel').textContent = 'Designation Name';
+        modalTitle.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Edit Designation';
+        companyForm.style.display = 'none';
+        branchForm.style.display = 'none';
+        genericForm.style.display = 'block';
+        userForm.style.display = 'none';
+        modalBackdrop.style.display = 'flex';
+    }
+
+    function deleteDesig(id, name) {
+        if (!confirm(`Delete designation "${name}"?`)) return;
+        fetch(`/designations/delete/${id}`, { method: 'POST' })
+            .then(r => r.json()).then(res => { if (res.status === 'success') location.reload(); else showAlert(res.msg, 'error'); });
+    }
+
+    function handleGenericSubmit(e) {
+        e.preventDefault();
+        const id = document.getElementById('entityId').value;
+        const type = document.getElementById('entityType').value;
+        const name = document.getElementById('entityName').value.trim();
+        if (!name) return;
+
+        let url = '';
+        const formData = new FormData();
+        if (type === 'dept') {
+            url = id ? `/departments/edit/${id}` : '/departments/add';
+            formData.append('department_name', name);
+        } else {
+            url = id ? `/designations/edit/${id}` : '/designations/add';
+            formData.append('designation_name', name);
+        }
+
+        fetch(url, { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(res => { if (res.status === 'success') { closeModal(); location.reload(); } else alert(res.msg); });
+    }
+
+    // USERS
+    function openAddUserModal() {
+        document.getElementById('newUsername').value = '';
+        document.getElementById('newEmail').value = '';
+        document.getElementById('newPassword').value = '';
+        modalTitle.innerHTML = '<i class="fa-solid fa-user-plus"></i> Create New User';
+        companyForm.style.display = 'none';
+        branchForm.style.display = 'none';
+        genericForm.style.display = 'none';
+        userForm.style.display = 'block';
+        modalBackdrop.style.display = 'flex';
+    }
+
+    function handleUserSubmit(e) {
+        e.preventDefault();
+        const formData = new FormData(userForm);
+        fetch('/users/add', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') { closeModal(); location.reload(); }
+                else alert(res.msg || 'Error creating user');
+            });
+    }
+
+    function deleteUser(id, username) {
+        if (!confirm(`Are you sure you want to delete user "${username}"?`)) return;
+        fetch(`/users/delete/${id}`, { method: 'POST' })
+            .then(r => r.json()).then(res => { if (res.status === 'success') location.reload(); else showAlert(res.msg, 'error'); });
+    }
+</script>
+{% endblock %}

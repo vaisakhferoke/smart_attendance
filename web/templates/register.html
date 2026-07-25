@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Attendance - Employee Onboarding{% endblock %}
+{% block page_subtitle %}Employee Registration Portal{% endblock %}
+
+{% block content %}
+<!-- Main Dashboard Container -->
+<div class="dashboard-grid">
+    <!-- Left Panel: Registration Form -->
+    <main class="card form-card">
+        <div class="card-header">
+            <h2><i class="fa-solid fa-user-plus"></i> Employee Information</h2>
+            <p>Enter details to register employee into the smart attendance database.</p>
+        </div>
+
+        <form id="empForm" autocomplete="off">
+            <div class="form-section">
+                <span class="section-title"><i class="fa-solid fa-address-card"></i> Personal Profile</span>
+
+                <div class="input-grid">
+                    <!-- Employee Code -->
+                    <div class="input-group">
+                        <label for="emp_code">Employee Code <span class="required">*</span></label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-id-badge input-icon"></i>
+                            <input type="text" id="emp_code" name="emp_code" placeholder="e.g. EMP-101" required />
+                        </div>
+                    </div>
+
+                    <!-- Full Name -->
+                    <div class="input-group">
+                        <label for="full_name">Full Name <span class="required">*</span></label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-user input-icon"></i>
+                            <input type="text" id="full_name" name="full_name" placeholder="John Doe" required />
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="input-group">
+                        <label for="email">Email Address <span class="required">*</span></label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-envelope input-icon"></i>
+                            <input type="email" id="email" name="email" placeholder="john.doe@company.com" required />
+                        </div>
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="input-group">
+                        <label for="phone">Phone Number <span class="required">*</span></label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-phone input-icon"></i>
+                            <input type="tel" id="phone" name="phone" placeholder="+1 (555) 000-0000" required />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Address -->
+                <div class="input-group full-width">
+                    <label for="address">Residential Address <span class="required">*</span></label>
+                    <div class="input-wrapper textarea-wrapper">
+                        <i class="fa-solid fa-location-dot input-icon"></i>
+                        <textarea id="address" name="address" rows="2" placeholder="Street, City, State, ZIP Code" required></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <span class="section-title"><i class="fa-solid fa-sitemap"></i> Organization Structure</span>
+                <div class="input-grid">
+                    <!-- Branch Dropdown -->
+                    <div class="input-group">
+                        <label for="branch_id">Branch <span class="required">*</span></label>
+                        <div class="input-wrapper select-wrapper">
+                            <i class="fa-solid fa-code-branch input-icon"></i>
+                            <select id="branch_id" name="branch_id" required>
+                                <option value="" disabled selected>Select Branch</option>
+                                {% for b in branches %}
+                                <option value="{{ b.id }}">{{ b.branch_name }} ({{ b.branch_code }})</option>
+                                {% endfor %}
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-arrow"></i>
+                        </div>
+                    </div>
+
+                    <!-- Department Dropdown -->
+                    <div class="input-group">
+                        <label for="dept_id">Department <span class="required">*</span></label>
+                        <div class="input-wrapper select-wrapper">
+                            <i class="fa-solid fa-building input-icon"></i>
+                            <select id="dept_id" name="dept_id" required>
+                                <option value="" disabled selected>Select Department</option>
+                                {% for dept in departments %}
+                                <option value="{{ dept.id }}">{{ dept.department_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-arrow"></i>
+                        </div>
+                    </div>
+
+                    <!-- Designation Dropdown -->
+                    <div class="input-group">
+                        <label for="desig_id">Designation <span class="required">*</span></label>
+                        <div class="input-wrapper select-wrapper">
+                            <i class="fa-solid fa-briefcase input-icon"></i>
+                            <select id="desig_id" name="desig_id" required>
+                                <option value="" disabled selected>Select Designation</option>
+                                {% for desig in designations %}
+                                <option value="{{ desig.id }}">{{ desig.designation_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-arrow"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <input type="hidden" name="photo" id="photoInput" />
+
+            <!-- Submit Button -->
+            <button type="submit" id="submitBtn" class="btn btn-primary">
+                <span class="btn-text"><i class="fa-solid fa-cloud-arrow-up"></i> Complete Registration</span>
+                <div class="btn-spinner" style="display: none;">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i> Processing...
+                </div>
+            </button>
+        </form>
+    </main>
+
+    <!-- Right Panel: Camera & Biometric Capture Card -->
+    <aside class="card scanner-card">
+        <div class="card-header">
+            <h2><i class="fa-solid fa-camera"></i> Face Capture Scanner</h2>
+            <p>Position face within frame to generate biometric encoding vector.</p>
+        </div>
+
+        <div class="camera-viewport">
+            <!-- Live Video Feed -->
+            <div class="video-container" id="videoContainer">
+                <video id="video" autoplay playsinline muted></video>
+
+                <!-- Sci-Fi Camera Overlays -->
+                <div class="scan-frame">
+                    <div class="corner top-left"></div>
+                    <div class="corner top-right"></div>
+                    <div class="corner bottom-left"></div>
+                    <div class="corner bottom-right"></div>
+                    <div class="scan-line"></div>
+                </div>
+
+                <div class="camera-badge" id="cameraBadge">
+                    <i class="fa-solid fa-circle-dot"></i> Live Feed
+                </div>
+            </div>
+
+            <!-- Snapshot Preview Box (Shown after capture) -->
+            <div class="snapshot-container" id="snapshotContainer" style="display: none;">
+                <img id="snapshotPreview" alt="Captured Face Preview" />
+                <div class="snapshot-overlay">
+                    <span class="captured-badge"><i class="fa-solid fa-circle-check"></i> Face Encoded</span>
+                </div>
+            </div>
+
+            <canvas id="canvas" style="display: none;"></canvas>
+        </div>
+
+        <!-- Camera Controls -->
+        <div class="camera-actions">
+            <button type="button" id="snapBtn" class="btn btn-secondary">
+                <i class="fa-solid fa-camera-retro"></i> Capture Face
+            </button>
+            <button type="button" id="retakeBtn" class="btn btn-outline" style="display: none;">
+                <i class="fa-solid fa-rotate-right"></i> Retake Photo
+            </button>
+        </div>
+
+        <!-- Guidance Info Box -->
+        <div class="guidance-box">
+            <i class="fa-solid fa-lightbulb"></i>
+            <div>
+                <strong>Tips for best detection:</strong>
+                <ul>
+                    <li>Ensure good front lighting</li>
+                    <li>Look directly at the webcam</li>
+                    <li>Avoid glasses or heavy occlusion</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Toast Notification Container -->
+        <div id="toast" class="toast">
+            <i id="toastIcon" class="fa-solid fa-info-circle"></i>
+            <span id="toastMsg">Ready</span>
+        </div>
+    </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}

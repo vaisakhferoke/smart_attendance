@@ -1,0 +1,8 @@
+pip install mysql-connector-python
+pip install opencv-python
+pip install face-recognition
+pip install git+https://github.com/ageitgey/face_recognition_models
+python db_config.py
+
+python web\app.py
+http://127.0.0.1:5000/

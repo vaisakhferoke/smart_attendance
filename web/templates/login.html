@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Attendance - Admin Login</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-body">
+    <div class="ambient-glow">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        <div class="glow-orb orb-3"></div>
+    </div>
+
+    <div class="login-wrapper">
+        <div class="login-card glass">
+            <!-- Brand Header -->
+            <div class="login-header">
+                <div class="brand-icon-lg">
+                    {% if company_info and company_info.logo_path %}
+                        <img src="{{ url_for('static', filename=company_info.logo_path) }}" alt="Logo" class="header-logo-img" />
+                    {% else %}
+                        <i class="fa-solid fa-fingerprint"></i>
+                    {% endif %}
+                </div>
+                <h1>{{ company_info.company_name if company_info else 'Smart Attendance' }}</h1>
+                <p>Sign in to access your administrative dashboard & biometric controls.</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" autocomplete="off">
+                <div class="form-group">
+                    <label for="username">Username or Email</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user input-icon"></i>
+                        <input type="text" id="username" name="username" placeholder="admin" required autofocus />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="password" name="password" placeholder="••••••••" required />
+                        <i class="fa-solid fa-eye toggle-password" id="togglePassword"></i>
+                    </div>
+                </div>
+
+                <div class="login-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="remember" checked />
+                        <span>Remember credentials</span>
+                    </label>
+                </div>
+
+                <!-- Toast Alert -->
+                <div id="loginMsg" class="toast" style="display: none;"></div>
+
+                <button type="submit" id="loginBtn" class="btn btn-primary btn-lg">
+                    <span class="btn-text"><i class="fa-solid fa-right-to-bracket"></i> Sign In to Portal</span>
+                    <div class="btn-spinner" style="display: none;">
+                        <i class="fa-solid fa-circle-notch fa-spin"></i> Authenticating...
+                    </div>
+                </button>
+            </form>
+
+            <!-- Default Credentials Hint Card -->
+            <div class="demo-credentials">
+                <i class="fa-solid fa-shield-halved"></i>
+                <div class="demo-info">
+                    <span class="demo-title">Default Admin Login</span>
+                    <div class="demo-pills">
+                        <span>Username: <code>admin</code></span>
+                        <span>Password: <code>admin123</code></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+</html>

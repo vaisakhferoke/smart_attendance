@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Attendance - Employee Directory{% endblock %}
+{% block page_subtitle %}Employee Directory{% endblock %}
+
+{% block content %}
+<!-- Employee Directory Table Card -->
+<div class="card table-card">
+    <div class="card-header flex-header">
+        <div>
+            <h2><i class="fa-solid fa-address-book"></i> Registered Employees Directory</h2>
+            <p>Total {{ employees|length }} staff registered in system database.</p>
+        </div>
+        <a href="/register-employee" class="btn btn-primary">
+            <i class="fa-solid fa-user-plus"></i> Register New Employee
+        </a>
+    </div>
+
+    <!-- Toast Alert -->
+    <div id="alertMsg" class="toast" style="display: none; margin-bottom: 1rem;"></div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Employee Name</th>
+                    <th>Emp Code</th>
+                    <th>Contact Info</th>
+                    <th>Branch</th>
+                    <th>Department</th>
+                    <th>Designation</th>
+                    <th>Status</th>
+                    <th>Registered</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if employees %}
+                    {% for emp in employees %}
+                        <tr>
+                            <td class="emp-name-cell">
+                                <div class="table-avatar">
+                                    <i class="fa-solid fa-user"></i>
+                                </div>
+                                <div>
+                                    <strong>{{ emp.full_name }}</strong>
+                                </div>
+                            </td>
+                            <td><code>{{ emp.emp_code }}</code></td>
+                            <td>
+                                <div class="contact-info">
+                                    <span><i class="fa-solid fa-envelope"></i> {{ emp.email }}</span>
+                                    <span class="text-dim"><i class="fa-solid fa-phone"></i> {{ emp.phone }}</span>
+                                </div>
+                            </td>
+                            <td><span class="badge-count"><i class="fa-solid fa-code-branch"></i> {{ emp.branch_name or 'Main HQ' }}</span></td>
+                            <td>{{ emp.department_name or 'General' }}</td>
+                            <td>{{ emp.designation_name or 'Staff' }}</td>
+                            <td>
+                                {% if emp.status == 'ACTIVE' %}
+                                    <span class="status-pill success"><i class="fa-solid fa-check"></i> ACTIVE</span>
+                                {% else %}
+                                    <span class="status-pill warning"><i class="fa-solid fa-circle-pause"></i> INACTIVE</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ emp.created_at_display }}</td>
+                            <td>
+                                <div class="action-btns">
+                                    <button type="button" class="btn-action btn-edit" onclick="toggleStatus('{{ emp.id }}', '{{ emp.full_name }}', '{{ emp.status }}')">
+                                        <i class="fa-solid fa-toggle-on"></i> Toggle
+                                    </button>
+                                    <button type="button" class="btn-action btn-delete" onclick="deleteEmployee('{{ emp.id }}', '{{ emp.full_name }}')">
+                                        <i class="fa-solid fa-trash-can"></i> Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="empty-table">
+                            <i class="fa-solid fa-users-slash"></i> No registered employees found. Click "Register New Employee" to add staff.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const alertMsg = document.getElementById('alertMsg');
+
+    function showAlert(msg, type = 'success') {
+        alertMsg.style.display = 'flex';
+        alertMsg.className = `toast ${type}`;
+        alertMsg.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-xmark'}"></i> ${msg}`;
+        setTimeout(() => { alertMsg.style.display = 'none'; }, 4000);
+    }
+
+    function toggleStatus(id, name, currentStatus) {
+        const nextStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+        if (!confirm(`Change status of "${name}" to ${nextStatus}?`)) return;
+
+        fetch(`/employees/toggle_status/${id}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') location.reload();
+                else showAlert(res.msg || 'Error toggling status', 'error');
+            })
+            .catch(err => console.error(err));
+    }
+
+    function deleteEmployee(id, name) {
+        if (!confirm(`Are you sure you want to permanently delete employee "${name}"?`)) return;
+
+        fetch(`/employees/delete/${id}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') location.reload();
+                else showAlert(res.msg || 'Error deleting employee', 'error');
+            })
+            .catch(err => console.error(err));
+    }
+</script>
+{% endblock %}

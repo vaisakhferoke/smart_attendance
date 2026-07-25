@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ company_info.company_name if company_info else 'Smart Attendance' }} Portal{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    <div class="ambient-glow">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        <div class="glow-orb orb-3"></div>
+    </div>
+
+    <div class="app-wrapper">
+        <!-- Master Navigation Header (Dynamic DB Company Name & Logo) -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-icon">
+                    {% if company_info and company_info.logo_path %}
+                        <img src="{{ url_for('static', filename=company_info.logo_path) }}" alt="Logo" class="header-logo-img" />
+                    {% else %}
+                        <i class="fa-solid fa-fingerprint"></i>
+                    {% endif %}
+                </div>
+                <div class="brand-text">
+                    <h1>{{ company_info.company_name if company_info else 'Smart Attendance' }}</h1>
+                    <span class="badge">{% block page_subtitle %}Biometric Portal{% endblock %}</span>
+                </div>
+            </div>
+
+            <!-- Unified Navigation Links -->
+            <nav class="nav-links">
+                <a href="/dashboard" class="nav-btn {% if request.path == '/dashboard' or request.path == '/' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-pie"></i> Dashboard
+                </a>
+                <a href="/employees" class="nav-btn {% if request.path == '/employees' %}active{% endif %}">
+                    <i class="fa-solid fa-users"></i> Employees
+                </a>
+                <a href="/attendance" class="nav-btn {% if request.path == '/attendance' %}active{% endif %}">
+                    <i class="fa-solid fa-camera-rotate"></i> Scanner
+                </a>
+                <a href="/register-employee" class="nav-btn {% if request.path == '/register-employee' %}active{% endif %}">
+                    <i class="fa-solid fa-user-plus"></i> Add Employee
+                </a>
+                <a href="/settings" class="nav-btn {% if '/settings' in request.path or '/departments' in request.path or '/designations' in request.path %}active{% endif %}">
+                    <i class="fa-solid fa-gear"></i> Settings
+                </a>
+            </nav>
+
+            <!-- User Profile & Logout -->
+            <div class="user-profile-menu">
+                <div class="user-info">
+                    <span class="username">{{ session.get('username', 'Admin')|capitalize }}</span>
+                    <span class="user-role">Administrator</span>
+                </div>
+                <a href="/logout" class="logout-btn" title="Sign Out">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Page Content Block -->
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
