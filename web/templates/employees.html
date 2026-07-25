@@ -118,150 +118,164 @@
             <input type="hidden" id="edit_emp_id" name="emp_id" />
             <input type="hidden" id="edit_photo_base64" name="photo_base64" />
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
-                <div class="input-group">
-                    <label class="form-label"><i class="fa-solid fa-user"></i> Full Name <span
-                            class="required">*</span></label>
-                    <div class="input-wrapper">
-                        <i class="fa-solid fa-user input-icon"></i>
-                        <input type="text" id="edit_full_name" name="full_name" required
-                            placeholder="Enter full name" />
+            <!-- Personal Profile Section -->
+            <div class="form-section">
+                <span class="section-title"><i class="fa-solid fa-address-card"></i> Personal Profile</span>
+
+                <div class="input-grid">
+                    <!-- Employee Code (Display Only) -->
+                    <div class="input-group">
+                        <label for="edit_code_display">Employee Code</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-id-badge input-icon"></i>
+                            <input type="text" id="edit_code_display" disabled style="opacity: 0.75; cursor: not-allowed;" />
+                        </div>
+                    </div>
+
+                    <!-- Full Name -->
+                    <div class="input-group">
+                        <label for="edit_full_name">Full Name <span class="required">*</span></label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-user input-icon"></i>
+                            <input type="text" id="edit_full_name" name="full_name" required placeholder="John Doe" />
+                        </div>
+                    </div>
+
+                    <!-- Email Address -->
+                    <div class="input-group">
+                        <label for="edit_email">Email Address</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-envelope input-icon"></i>
+                            <input type="email" id="edit_email" name="email" placeholder="john.doe@company.com" />
+                        </div>
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div class="input-group">
+                        <label for="edit_phone">Phone Number</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-phone input-icon"></i>
+                            <input type="tel" id="edit_phone" name="phone" placeholder="+1 (555) 000-0000" />
+                        </div>
                     </div>
                 </div>
 
-                <div class="input-group">
-                    <label class="form-label"><i class="fa-solid fa-envelope"></i> Email Address</label>
-                    <div class="input-wrapper">
-                        <i class="fa-solid fa-envelope input-icon"></i>
-                        <input type="email" id="edit_email" name="email" placeholder="name@company.com" />
-                    </div>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.75rem;">
-                <div class="input-group">
-                    <label class="form-label"><i class="fa-solid fa-phone"></i> Phone Number</label>
-                    <div class="input-wrapper">
-                        <i class="fa-solid fa-phone input-icon"></i>
-                        <input type="text" id="edit_phone" name="phone" placeholder="+1 234 567 890" />
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <label class="form-label"><i class="fa-solid fa-location-dot"></i> Address</label>
+                <!-- Residential Address -->
+                <div class="input-group full-width">
+                    <label for="edit_address">Residential Address</label>
                     <div class="input-wrapper">
                         <i class="fa-solid fa-location-dot input-icon"></i>
-                        <input type="text" id="edit_address" name="address" placeholder="Street, City, Country" />
+                        <input type="text" id="edit_address" name="address" placeholder="Street, City, State, ZIP Code" />
                     </div>
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem;">
-                <div class="input-group">
-                    <label class="form-label"><i class="fa-solid fa-code-branch"></i> Branch</label>
-                    <div class="input-wrapper select-wrapper">
-                        <i class="fa-solid fa-building-user input-icon"></i>
-                        <select id="edit_branch_id" name="branch_id">
-                            <option value="">-- Main HQ --</option>
-                            {% for b in branches %}
-                            <option value="{{ b.id }}">{{ b.branch_name }}</option>
-                            {% endfor %}
-                        </select>
-                        <i class="fa-solid fa-chevron-down select-arrow"></i>
+            <!-- Organization Structure Section -->
+            <div class="form-section">
+                <span class="section-title"><i class="fa-solid fa-sitemap"></i> Organization Structure</span>
+                <div class="input-grid">
+                    <!-- Branch -->
+                    <div class="input-group">
+                        <label for="edit_branch_id">Branch</label>
+                        <div class="input-wrapper select-wrapper">
+                            <i class="fa-solid fa-code-branch input-icon"></i>
+                            <select id="edit_branch_id" name="branch_id">
+                                <option value="">-- Main HQ --</option>
+                                {% for b in branches %}
+                                <option value="{{ b.id }}">{{ b.branch_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-arrow"></i>
+                        </div>
                     </div>
-                </div>
 
-                <div class="input-group">
-                    <label class="form-label"><i class="fa-solid fa-building"></i> Department</label>
-                    <div class="input-wrapper select-wrapper">
-                        <i class="fa-solid fa-layer-group input-icon"></i>
-                        <select id="edit_department_id" name="department_id">
-                            <option value="">-- Select Dept --</option>
-                            {% for d in departments %}
-                            <option value="{{ d.id }}">{{ d.department_name }}</option>
-                            {% endfor %}
-                        </select>
-                        <i class="fa-solid fa-chevron-down select-arrow"></i>
+                    <!-- Department -->
+                    <div class="input-group">
+                        <label for="edit_department_id">Department</label>
+                        <div class="input-wrapper select-wrapper">
+                            <i class="fa-solid fa-building input-icon"></i>
+                            <select id="edit_department_id" name="department_id">
+                                <option value="">-- Select Department --</option>
+                                {% for d in departments %}
+                                <option value="{{ d.id }}">{{ d.department_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-arrow"></i>
+                        </div>
                     </div>
-                </div>
 
-                <div class="input-group">
-                    <label class="form-label"><i class="fa-solid fa-id-card"></i> Designation</label>
-                    <div class="input-wrapper select-wrapper">
-                        <i class="fa-solid fa-user-gear input-icon"></i>
-                        <select id="edit_designation_id" name="designation_id">
-                            <option value="">-- Select Title --</option>
-                            {% for dg in designations %}
-                            <option value="{{ dg.id }}">{{ dg.designation_name }}</option>
-                            {% endfor %}
-                        </select>
-                        <i class="fa-solid fa-chevron-down select-arrow"></i>
+                    <!-- Designation -->
+                    <div class="input-group">
+                        <label for="edit_designation_id">Designation</label>
+                        <div class="input-wrapper select-wrapper">
+                            <i class="fa-solid fa-briefcase input-icon"></i>
+                            <select id="edit_designation_id" name="designation_id">
+                                <option value="">-- Select Designation --</option>
+                                {% for dg in designations %}
+                                <option value="{{ dg.id }}">{{ dg.designation_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-arrow"></i>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Face Photo Section -->
-            <div style="margin-top: 1.25rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
-                <label class="form-label" style="font-weight: 700; color: var(--accent-cyan); font-size: 0.9rem;">
-                    <i class="fa-solid fa-camera"></i> Update Face Photo & SFace Recognition Encoding
-                </label>
+            <!-- Profile Picture & Biometrics Section -->
+            <div class="form-section">
+                <span class="section-title"><i class="fa-solid fa-camera"></i> Profile Picture & Biometrics</span>
 
-                <!-- Toggle Photo Option Buttons -->
                 <div class="photo-tab-bar">
-                    <button type="button" id="tabUploadBtn" class="photo-tab-btn active"
-                        onclick="switchPhotoTab('upload')">
-                        <i class="fa-solid fa-upload"></i> Upload Image File
+                    <button type="button" id="tabUploadBtn" class="photo-tab-btn active" onclick="switchPhotoTab('upload')">
+                        <i class="fa-solid fa-upload"></i> Upload Profile Picture
                     </button>
                     <button type="button" id="tabCamBtn" class="photo-tab-btn" onclick="switchPhotoTab('camera')">
-                        <i class="fa-solid fa-video"></i> Capture from Camera
+                        <i class="fa-solid fa-video"></i> Live Webcam Scanner
                     </button>
                 </div>
 
                 <!-- Option A: File Upload -->
                 <div id="photoUploadBox" style="display: block;">
-                    <input type="file" id="edit_photo_file" name="photo_file" accept="image/*" class="form-input"
-                        onchange="previewFilePhoto(this)" />
-                    <span style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.3rem; display: block;">Leave
-                        empty to keep existing employee photo.</span>
+                    <div class="input-group">
+                        <label class="form-label" style="font-size: 0.85rem; font-weight: 700;">
+                            <i class="fa-solid fa-file-image"></i> Select Photo File
+                        </label>
+                        <input type="file" id="edit_photo_file" name="photo_file" accept="image/*" class="form-input" onchange="previewFilePhoto(this)" />
+                    </div>
+                    <span style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.35rem; display: block;">
+                        Leave empty to keep existing employee photo.
+                    </span>
                 </div>
 
                 <!-- Option B: Live Webcam -->
                 <div id="photoCamBox" style="display: none; flex-direction: column; gap: 0.6rem;">
-                    <video id="editWebcam" autoplay playsinline
-                        style="width: 100%; max-height: 220px; border-radius: 12px; background: #000; display: none; border: 1px solid var(--card-border);"></video>
+                    <video id="editWebcam" autoplay playsinline style="width: 100%; max-height: 220px; border-radius: 12px; background: #000; display: none; border: 1px solid var(--card-border);"></video>
                     <div style="display: flex; gap: 0.5rem;">
-                        <button type="button" id="startCamBtn" class="btn btn-secondary" style="font-size: 0.825rem;"
-                            onclick="startWebcam()">
+                        <button type="button" id="startCamBtn" class="btn btn-secondary" style="font-size: 0.825rem;" onclick="startWebcam()">
                             <i class="fa-solid fa-power-off"></i> Start Webcam Stream
                         </button>
-                        <button type="button" id="snapCamBtn" class="btn btn-primary"
-                            style="font-size: 0.825rem; display: none;" onclick="snapCameraPhoto()">
+                        <button type="button" id="snapCamBtn" class="btn btn-primary" style="font-size: 0.825rem; display: none;" onclick="snapCameraPhoto()">
                             <i class="fa-solid fa-camera"></i> Capture Snapshot
                         </button>
                     </div>
                 </div>
 
                 <!-- Photo Preview Box -->
-                <div id="previewContainer"
-                    style="margin-top: 0.85rem; display: flex; align-items: center; gap: 1rem; background: rgba(15,23,42,0.5); padding: 0.6rem 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+                <div id="previewContainer" style="margin-top: 0.85rem; display: flex; align-items: center; gap: 1rem; background: rgba(15,23,42,0.5); padding: 0.6rem 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
                     <div class="preview-avatar-wrap">
-                        <img id="photoPreviewImg" src="" alt="Preview" style="display: none;"
-                            onerror="this.style.display='none'; document.getElementById('photoPreviewFallback').style.display='block';" />
-                        <i id="photoPreviewFallback" class="fa-solid fa-user"
-                            style="font-size: 1.5rem; color: var(--text-dim);"></i>
+                        <img id="photoPreviewImg" src="" alt="Preview" style="display: none;" onerror="this.style.display='none'; document.getElementById('photoPreviewFallback').style.display='block';" />
+                        <i id="photoPreviewFallback" class="fa-solid fa-user" style="font-size: 1.5rem; color: var(--text-dim);"></i>
                     </div>
                     <div>
-                        <span id="previewText" style="font-size: 0.85rem; font-weight: 700; color: #ffffff;">Current
-                            Photo</span>
-                        <span style="font-size: 0.75rem; color: var(--text-dim); display: block;">Image will be encoded
-                            into 128D SFace feature vector upon saving.</span>
+                        <span id="previewText" style="font-size: 0.85rem; font-weight: 700; color: #ffffff;">Current Photo</span>
+                        <span style="font-size: 0.75rem; color: var(--text-dim); display: block;">Image will be encoded into 128D SFace feature vector upon saving.</span>
                     </div>
                 </div>
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">
+                <button type="button" class="btn btn-outline" style="flex: 0 0 auto;" onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="width: auto;">
                     <i class="fa-solid fa-floppy-disk"></i> Save Changes
                 </button>
             </div>
@@ -297,6 +311,7 @@
 
         document.getElementById('edit_emp_id').value = id;
         document.getElementById('modalEmpCode').innerText = code;
+        document.getElementById('edit_code_display').value = code || '';
         document.getElementById('edit_full_name').value = fullName || '';
         document.getElementById('edit_email').value = email || '';
         document.getElementById('edit_phone').value = phone || '';

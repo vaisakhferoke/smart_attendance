@@ -329,7 +329,6 @@ body {
 }
 
 .input-wrapper {
-    padding-top: 3mm;
     position: relative;
     display: flex;
     align-items: center;
@@ -1524,7 +1523,7 @@ video {
 
 /* Modal Large Variation & Form Input Controls */
 .modal-card.modal-lg {
-    max-width: 640px;
+    max-width: 780px;
 }
 
 .modal-body {
@@ -1563,6 +1562,16 @@ video {
     outline: none;
     transition: var(--transition);
     box-sizing: border-box;
+}
+
+.modal-card .input-wrapper input:not([type="file"]):not([type="hidden"]) {
+    padding-left: 2.8rem !important;
+    padding-right: 1rem !important;
+}
+
+.modal-card .input-wrapper.select-wrapper select {
+    padding-left: 2.8rem !important;
+    padding-right: 2.8rem !important;
 }
 
 .form-input:focus,
