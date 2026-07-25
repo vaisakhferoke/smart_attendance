@@ -40,6 +40,10 @@ auto_migrate_employee_credentials()
 app = Flask(__name__)
 app.secret_key = 'smart_attendance_super_secret_key_2026'
 
+# Register API Blueprint from separate 'api' module
+from api import api_bp
+app.register_blueprint(api_bp, url_prefix='/api')
+
 # Ensure uploads directory exists
 UPLOAD_FOLDER = os.path.join(PROJECT_ROOT, 'web', 'static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
